@@ -11,7 +11,7 @@ export interface FeatureModel {
   getFeatureNameById: (state: FeatureModel) => (id: number) => string;
 }
 
-const featureModel: FeatureModel = {
+export const featureModel: FeatureModel = {
   features: [],
   loading: false,
   setFeatures: action((state, payload) => {
@@ -23,7 +23,7 @@ const featureModel: FeatureModel = {
   fetchFeatures: thunk(async (actions) => {
     actions.setLoading(true);
     try {
-      const res = await axios.get('/features');
+      const res = await axios.get('/v1/team-access-manager/feature/getAll');
       actions.setFeatures(res.data || []);
     } catch (err) {
       console.error('Failed to fetch features:', err);
@@ -37,4 +37,4 @@ const featureModel: FeatureModel = {
   }
 };
 
-export default featureModel;
+

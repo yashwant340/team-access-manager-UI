@@ -3,6 +3,7 @@ import { Table, Switch, Button, message, Spin } from 'antd';
 import axios from '../api/axiosInstance';
 import type { TeamAccessControlDTO } from '../types/dto';
 
+
 interface Props {
   teamId: number;
 }
@@ -11,8 +12,8 @@ export default function TeamFeatureAccess({ teamId }: Props) {
   const [features, setFeatures] = useState<TeamAccessControlDTO[]>([]);
   const [accessMap, setAccessMap] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState<boolean>(true);
-  const [saving, setSaving] = useState<boolean>(false);
-
+  const [saving, setSaving] = useState<boolean>(false)
+  
   useEffect(() => {
     if (!teamId) return;
 
