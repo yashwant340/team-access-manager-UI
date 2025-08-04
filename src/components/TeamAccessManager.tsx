@@ -4,8 +4,8 @@ import axios from '../api/axiosInstance';
 import type {  TeamDTO, UserDTO } from '../types/dto';
 import TeamFeatureAccess from './TeamFeatureAccess';
 import { useStoreState, useStoreActions } from '../store/hooks';
-import { Dropdown, Menu } from 'antd';
-import { EllipsisOutlined } from '@ant-design/icons';
+import { DeleteOutlined } from '@ant-design/icons';
+import AuditTrail from './AuditTrail';
 
 const { Title } = Typography;
 
@@ -24,6 +24,25 @@ export default function TeamAccessManager() {
     const [newTeamName, setNewTeamName] = useState('');
     const [selectedFeatures, setSelectedFeatures] = useState<string[]>([]);
 
+    const [auditModalOpen, setAuditModalOpen] = useState(false);
+    const [auditData, setAuditData] = useState<any[]>([]);
+    const [auditLoading, setAuditLoading] = useState(false);
+
+    const openAuditModal = async (teamId: number) => {
+        setAuditModalOpen(true);
+        setAuditLoading(true);
+        try {
+            const res = await axios.get('/v1/team-access-manager/team/auditLog', {
+                params: { teamId },
+            });
+            setAuditData(res.data || []);
+        } catch {
+            message.error('Failed to fetch audit trail');
+        } finally {
+            setAuditLoading(false);
+        }
+    };
+
     useEffect(() => {
         if(addModalOpen && features.length == 0){
             fetchFeatures();
@@ -36,6 +55,28 @@ export default function TeamAccessManager() {
         .then((res) => setTeams(res.data))
         .catch(() => message.error('Failed to load teams'));
     }, []);
+
+    const confirmDeleteTeam = (team: TeamDTO) => {
+  Modal.confirm({
+    title: `You are about to inactivate the team "${team.name}".`,
+    content: (
+      <div>
+        <p>This action will:</p>
+        <ul style={{ paddingLeft: 20 }}>
+          <li>Inactivate the team to preserve the team and its audit history</li>
+          <li>Switch all users in the team to override team access</li>
+          <li>Set their access to all features as <strong>“Not Granted”</strong> by default</li>
+        </ul>
+        <p style={{ marginTop: 16 }}>Are you sure you want to continue?</p>
+      </div>
+    ),
+    okText: 'Confirm and Inactivate',
+    cancelText: 'Cancel',
+    okType: 'danger',
+    centered: true,
+    onOk: () => handleDeleteTeam(team),
+  });
+};
 
   const handleAddTeam = () => {
     if (!newTeamName.trim()) {
@@ -64,12 +105,16 @@ export default function TeamAccessManager() {
         });
 };
 
-    const handleDeleteTeam = () => {
-
+    const handleDeleteTeam = (team: TeamDTO) => {
+        axios.post('/v1/team-access-manager/team/delete',null,{
+            params : {
+                teamId : team.id,
+            }
+        }).then(() => {
+            setTeams((prev) => prev.filter(x => x.id !== team.id))
+        })
     }
-    const handleEditTeam = () => {
-        
-    }
+    
   const openPermissionsModal = (team: TeamDTO) => {
     setSelectedTeam(team);
     setIsModalOpen(true);
@@ -108,47 +153,24 @@ export default function TeamAccessManager() {
       ),
     },
     {
-        title: 'Audit Trail',
-        render: (_: any) => (
-            <Button type="link">
-                View Audit
-            </Button>
-        )
+    title: 'Audit',
+    render: (_: any, team: TeamDTO) => (
+        <Button type="link" onClick={() => openAuditModal(team.id)}>
+            View Audit
+        </Button>
+    ),
     },
     {
-  title: 'Actions',
-  render: (_: any) => {
-    const menu = (
-      <Menu
-        items={[
-            {
-                key: 'addUsers',
-                label: 'Add users'
-            },
-          {
-            key: 'edit',
-            label: 'Edit Team',
-            onClick: () => handleEditTeam(),
-          },
-          {
-            key: 'delete',
-            label: 'Delete Team',
-            onClick: () => handleDeleteTeam(),
-            danger: true,
-          },
-        ]}
-      />
-    );
-
-    return (
-      <Dropdown overlay={menu} trigger={['click']}>
-        <EllipsisOutlined style={{ fontSize: 20, cursor: 'pointer' }} />
-      </Dropdown>
-    );
-  },
-}
-
-    
+        title: 'Actions',
+        key: 'actions',
+        render: (_: any, team: TeamDTO) => (
+        <DeleteOutlined
+            onClick={() => confirmDeleteTeam(team)}
+            style={{ color: 'red', fontSize: 18, cursor: 'pointer' }}
+        />
+        ),
+    }
+ 
   ];
 
   return (
@@ -229,6 +251,20 @@ export default function TeamAccessManager() {
       >
         {selectedTeam && <TeamFeatureAccess teamId={selectedTeam.id} />}
       </Modal>
+
+      <Modal>
+
+      </Modal>
+
+        {auditModalOpen && (
+            <AuditTrail
+                visible = {true}
+                onClose={() => setAuditModalOpen(false)}
+                auditData={auditData}
+                loading={auditLoading}
+            />
+        )}
+
     </div>
   );
 }

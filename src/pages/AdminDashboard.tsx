@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { Tabs, Select, Typography, Divider } from "antd";
 import TeamAccessManager from "../components/TeamAccessManager";
+import UserAccessManager from "../components/UserAccessManager";
 
 const { Title } = Typography;
 const { TabPane } = Tabs;
@@ -41,7 +42,7 @@ const AdminDashboard: React.FC = () => {
             ))}
           </Select>
 
-          {/* {selectedUserId && <UserAccessManager userId={selectedUserId} />} */}
+          <UserAccessManager></UserAccessManager>
         </TabPane>
       </Tabs>
     </div>
