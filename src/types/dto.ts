@@ -7,7 +7,7 @@ export interface TeamDTO {
 export interface UserDTO{
     id : number;
     name : string;
-    empId : number;
+    empId : string;
     email : string;
     role : string;
     teamId :number;
