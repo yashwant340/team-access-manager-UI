@@ -1,12 +1,12 @@
 import { createStore } from 'easy-peasy';
-import feature, { type FeatureModel } from './model/feature';
+import { featureModel, type FeatureModel } from './model/feature';
 
 export interface StoreModel {
-  feature: FeatureModel;
+  featureModel: FeatureModel;
 }
 
 const store = createStore<StoreModel>({
-  feature,
+  featureModel,
 });
 
 export default store;

@@ -2,17 +2,19 @@ export interface TeamDTO {
   id: number;
   name: string;
   userList: UserDTO[];
+  active : boolean;
 }
 
 export interface UserDTO{
     id : number;
     name : string;
+    empId : string;
     email : string;
     role : string;
     teamId :number;
     teamName : string;
     accessMode : string;
-    isActive :boolean;
+    active :boolean;
 }
 
 export interface FeatureDTO {
@@ -29,7 +31,16 @@ export interface TeamAccessControlDTO {
   hasAccess: boolean;
 }
 
+export interface UserAccessControlDTO {
+  id: number;
+  userId: number;
+  userName: string;
+  featureId: number;
+  featureName: string;
+  hasAccess: boolean;
+}
+
 export interface AccessControlDTO {
   teamAccessControlDTOS: TeamAccessControlDTO[];
-  userAccessControlDTOS: any[]; // replace with correct type if needed
+  userAccessControlDTOS: UserAccessControlDTO[];
 }
