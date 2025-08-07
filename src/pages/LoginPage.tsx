@@ -2,19 +2,26 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosInstance'; // Axios instance with baseURL
 import { TextField, Button, Box, Typography } from '@mui/material';
+import { useAuth } from '../providers/AuthProvider';
 
 const Login: React.FC = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const handleLogin = async () => {
     try {
       const response = await axios.post('/auth/login', { username, password });
-      localStorage.setItem('token', response.data.token);
-      console.log(localStorage.getItem('token') )
-      navigate('/dashboard'); // Redirect on success
+      const token = response.data.token;
+      console.log(token);
+      if (token) {
+        login(token);
+        navigate('/dashboard');
+      } else {
+        setError('Invalid response from server');
+      } 
     } catch (err) {
       setError('Invalid username or password');
     }

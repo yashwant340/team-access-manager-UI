@@ -10,10 +10,12 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import HistoryIcon from '@mui/icons-material/History';
 import { IconButton, Tab, Tabs, TextField, Tooltip, useTheme } from '@mui/material';
+import { useAuth } from '../providers/AuthProvider';
 
 const { Title } = Typography;
 
 export default function TeamAccessManager() {
+    const {user} = useAuth();
     const [teams, setTeams] = useState<TeamDTO[]>([]);
     const [selectedTeam, setSelectedTeam] = useState<TeamDTO | null>(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -50,7 +52,6 @@ export default function TeamAccessManager() {
     const activeTeams = teams.filter(team => team.active);
     const inActiveTeams = teams.filter(team => !team.active);
 
-
     const openAuditModal = async (teamId: number) => {
         setAuditModalOpen(true);
         setAuditLoading(true);
@@ -74,12 +75,19 @@ export default function TeamAccessManager() {
 
     const fetchTeams = async () => {
       try{
-        const response = await axios.get<TeamDTO[]>('/v1/team-access-manager/team/getAll');
-        setTeams(response.data);
+        
+        if (user?.platformRole === "PLATFORM_ADMIN") {
+          const response = await axios.get<TeamDTO[]>('/v1/team-access-manager/team/getAll');
+          setTeams(response.data);
+        }else if (user?.platformRole === "TEAM_ADMIN") {
+          const response = await axios.get<TeamDTO[]>('/v1/team-access-manager/team/getAll');
+          setTeams(response.data);
+        }
       }catch (error) {
         message.error('Error fetching users');
-  }
+      }
     }
+    
     useEffect(() => {
       fetchTeams()
     }, []);
@@ -214,15 +222,18 @@ export default function TeamAccessManager() {
             sortable: false,
             filterable: false,
             width: 150,
-            renderCell: (params) => (
+            renderCell: (params) => {
+              const canDelete = user?.platformRole === 'PLATFORM_ADMIN'
+              return(
               <>
                 <Tooltip title="Delete">
-                  <IconButton onClick={() => confirmDeleteTeam(params.row)} color="error">
+                  <IconButton onClick={() => confirmDeleteTeam(params.row)} color="error" disabled = {!canDelete}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
               </>
-            ),
+              )
+            },
     }
  
   ];
@@ -249,9 +260,9 @@ export default function TeamAccessManager() {
     <div style={{ padding: 24 }}>
       <Title level={4}>Team Access Control</Title>
       <div className='d-flex justify-content-end mb-3'>
-        <Button type="primary" onClick={() => setAddModalOpen(true)}>
+        {user?.platformRole === 'PLATFORM_ADMIN' && <Button type="primary" onClick={() => setAddModalOpen(true)}>
           Add New Team
-        </Button>
+        </Button>}
       </div>
 
       <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2 }}>

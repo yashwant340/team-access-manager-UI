@@ -7,27 +7,49 @@ import { StoreProvider } from 'easy-peasy';
 import store from './store';
 import { AuthProvider } from './providers/AuthProvider';
 
-const App: React.FC = () => {
-  const token = localStorage.getItem('token'); 
 
+const App: React.FC = () => {
   return (
-    
-    <AuthProvider>
-      <StoreProvider store={store}>
-        <Router>
+    <Router>
+      <AuthProvider>
+        <StoreProvider store={store}>
           <Routes>
             <Route
-              path="/dashboard"
+              path="/platform-admin"
               element={
-                token ? <AdminDashboard /> : <Navigate to="/login" replace />
+                localStorage.getItem('token') ? (
+                  <AdminDashboard />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/team-admin"
+              element={
+                localStorage.getItem('token') ? (
+                  <AdminDashboard />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
+              }
+            />
+            <Route
+              path="/user-dashboard"
+              element={
+                localStorage.getItem('token') ? (
+                  <AdminDashboard />
+                ) : (
+                  <Navigate to="/login" replace />
+                )
               }
             />
             <Route path="/login" element={<Login />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
-        </Router>
-      </StoreProvider>
-    </AuthProvider>
+        </StoreProvider>
+      </AuthProvider>
+    </Router>
   );
 };
 
