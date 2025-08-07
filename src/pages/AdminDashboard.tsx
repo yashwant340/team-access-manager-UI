@@ -9,20 +9,22 @@ const { TabPane } = Tabs;
 const AdminDashboard: React.FC = () => {
 
   return (
-    <div style={{ padding: "24px" }}>
-      <Title level={2}>🔐 Admin Access Control Dashboard</Title>
+    <div className="flex justify-center">
+        <div className="w-full max-w-6xl p-5">
+            <Title level={2}>🔐 Admin Access Control Dashboard</Title>
+            <Tabs defaultActiveKey="team">
+                <TabPane tab="Team Access" key="team">
+                    <TeamAccessManager  />
+                </TabPane>
 
-      <Tabs defaultActiveKey="team">
-        <TabPane tab="Team Access" key="team">
-            <TeamAccessManager  />
-        </TabPane>
-
-        <TabPane tab="User Access" key="user">
-
-          <UserAccessManager></UserAccessManager>
-        </TabPane>
-      </Tabs>
+                <TabPane tab="User Access" key="user">
+                    <UserAccessManager />
+                </TabPane>
+            </Tabs>
+        </div>
     </div>
+
+    
   );
 }
 

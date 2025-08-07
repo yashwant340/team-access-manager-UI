@@ -1,11 +1,15 @@
-import  { useEffect, useState } from 'react';
-import { Table, Button, Modal, Typography, message } from 'antd';
+import  { useEffect, useMemo, useState, type SetStateAction } from 'react';
+import {  Button, Modal, Typography, message } from 'antd';
 import axios from '../api/axiosInstance';
 import type {  TeamDTO, UserDTO } from '../types/dto';
 import TeamFeatureAccess from './TeamFeatureAccess';
 import { useStoreState, useStoreActions } from '../store/hooks';
-import { DeleteOutlined } from '@ant-design/icons';
 import AuditTrail from './AuditTrail';
+import { DataGrid, GridToolbar, type GridColDef, type GridPaginationModel } from '@mui/x-data-grid';
+import DeleteIcon from '@mui/icons-material/Delete';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import HistoryIcon from '@mui/icons-material/History';
+import { IconButton, Tab, Tabs, TextField, Tooltip, useTheme } from '@mui/material';
 
 const { Title } = Typography;
 
@@ -28,6 +32,25 @@ export default function TeamAccessManager() {
     const [auditData, setAuditData] = useState<any[]>([]);
     const [auditLoading, setAuditLoading] = useState(false);
 
+    const [searchText, setSearchText] = useState('');
+    const [filteredTeams, setFilteredTeams] = useState<TeamDTO[]>(teams);
+    const [selectedTab, setSelectedTab] = useState(0);
+
+    useEffect(() => {
+      const lowerSearch = searchText.toLowerCase();
+      const teamList = selectedTab === 0 ? activeTeams : inActiveTeams;
+      const filtered = teamList.filter((team) =>
+        Object.values(team).some((value) =>
+          String(value).toLowerCase().includes(lowerSearch)
+        )
+      );
+      setFilteredTeams(filtered);
+    }, [searchText, teams, selectedTab]);
+
+    const activeTeams = teams.filter(team => team.active);
+    const inActiveTeams = teams.filter(team => !team.active);
+
+
     const openAuditModal = async (teamId: number) => {
         setAuditModalOpen(true);
         setAuditLoading(true);
@@ -49,34 +72,39 @@ export default function TeamAccessManager() {
         }
     },[addModalOpen]);
 
+    const fetchTeams = async () => {
+      try{
+        const response = await axios.get<TeamDTO[]>('/v1/team-access-manager/team/getAll');
+        setTeams(response.data);
+      }catch (error) {
+        message.error('Error fetching users');
+  }
+    }
     useEffect(() => {
-    axios
-        .get<TeamDTO[]>('/v1/team-access-manager/team/getAll')
-        .then((res) => setTeams(res.data))
-        .catch(() => message.error('Failed to load teams'));
+      fetchTeams()
     }, []);
 
     const confirmDeleteTeam = (team: TeamDTO) => {
-  Modal.confirm({
-    title: `You are about to inactivate the team "${team.name}".`,
-    content: (
-      <div>
-        <p>This action will:</p>
-        <ul style={{ paddingLeft: 20 }}>
-          <li>Inactivate the team to preserve the team and its audit history</li>
-          <li>Switch all users in the team to override team access</li>
-          <li>Set their access to all features as <strong>“Not Granted”</strong> by default</li>
-        </ul>
-        <p style={{ marginTop: 16 }}>Are you sure you want to continue?</p>
-      </div>
-    ),
-    okText: 'Confirm and Inactivate',
-    cancelText: 'Cancel',
-    okType: 'danger',
-    centered: true,
-    onOk: () => handleDeleteTeam(team),
-  });
-};
+        Modal.confirm({
+          title: `You are about to inactivate the team "${team.name}".`,
+          content: (
+            <div>
+              <p>This action will:</p>
+              <ul style={{ paddingLeft: 20 }}>
+                <li>Inactivate the team to preserve the team and its audit history</li>
+                <li>Switch all users in the team to override team access</li>
+                <li>Set their access to all features as <strong>“Not Granted”</strong> by default</li>
+              </ul>
+              <p style={{ marginTop: 16 }}>Are you sure you want to continue?</p>
+            </div>
+          ),
+          okText: 'Confirm and Inactivate',
+          cancelText: 'Cancel',
+          okType: 'danger',
+          centered: true,
+          onOk: () => handleDeleteTeam(team),
+        });
+  };
 
   const handleAddTeam = () => {
     if (!newTeamName.trim()) {
@@ -111,7 +139,7 @@ export default function TeamAccessManager() {
                 teamId : team.id,
             }
         }).then(() => {
-            setTeams((prev) => prev.filter(x => x.id !== team.id))
+            fetchTeams();
         })
     }
     
@@ -131,54 +159,106 @@ export default function TeamAccessManager() {
     setSelectedTeam(null);
   };
 
-  const columns = [
+  const columns : GridColDef[] = [
     {
-      title: 'Team Name',
-      dataIndex: 'name',
+      field: 'name',
+      headerName: 'Team Name',
+      sortable: true,
+      filterable: true,
+      flex: 1,
+      minWidth: 150,
     },
     {
-      title: 'Members',
-      render: (_: any, team: TeamDTO) => (
-        <Button type="link" onClick={() => openUserListModal(team)}>
-            {team.userList?.length ?? 0}
+      field: 'userList',
+      headerName: 'Members',
+      sortable: false,
+      filterable: false,
+      flex: 1,
+      minWidth: 150,
+      renderCell: (params) => (
+        <Button type="link" onClick={() => openUserListModal(params.row)}>
+            {params.row.userList?.length ?? 0}
         </Button>   
         ),
     },
     {
-      title: 'Permissions',
-      render: (_: any, team: TeamDTO) => (
-        <Button type="link" onClick={() => openPermissionsModal(team)}>
-          Manage Permissions
+      field: 'permissions',
+      headerName: 'Permissions',
+      sortable: false,
+      filterable: false,
+      width: 180,
+      renderCell: (params) => (
+        <Button variant="text" onClick={() => openPermissionsModal(params.row)}>
+          <ManageAccountsIcon fontSize="small" style={{ marginRight: 4 }} />
+          Manage
+        </Button>
+      ),
+      
+    },
+    {
+      field: 'audit',
+      headerName: 'Audit Trail',
+      sortable: false,
+      filterable: false,
+      width: 150,
+      renderCell: (params) => (
+        <Button variant="text" onClick={() => openAuditModal(params.row.id)}>
+          <HistoryIcon fontSize="small" style={{ marginRight: 4 }} />
+          View
         </Button>
       ),
     },
     {
-    title: 'Audit',
-    render: (_: any, team: TeamDTO) => (
-        <Button type="link" onClick={() => openAuditModal(team.id)}>
-            View Audit
-        </Button>
-    ),
-    },
-    {
-        title: 'Actions',
-        key: 'actions',
-        render: (_: any, team: TeamDTO) => (
-        <DeleteOutlined
-            onClick={() => confirmDeleteTeam(team)}
-            style={{ color: 'red', fontSize: 18, cursor: 'pointer' }}
-        />
-        ),
+        field: 'actions',
+            headerName: 'Actions',
+            sortable: false,
+            filterable: false,
+            width: 150,
+            renderCell: (params) => (
+              <>
+                <Tooltip title="Delete">
+                  <IconButton onClick={() => confirmDeleteTeam(params.row)} color="error">
+                    <DeleteIcon fontSize="small" />
+                  </IconButton>
+                </Tooltip>
+              </>
+            ),
     }
  
   ];
 
+  const baseColumns = useMemo(() => {
+    if (selectedTab === 1) {
+      return columns.filter((col) => col.field !== 'permissions' && col.field !== 'actions' && col.field !== 'userList');
+    }
+    return columns
+  }, [selectedTab]);
+
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+    pageSize: 10,
+    page: 0,
+  });
+
+  const theme = useTheme();
+
+  const handleTabChange = (_event: any, newValue: SetStateAction<number>) => {
+      setSelectedTab(newValue);
+    };
+    
   return (
     <div style={{ padding: 24 }}>
       <Title level={4}>Team Access Control</Title>
-      <Button type="primary" onClick={() => setAddModalOpen(true)} style={{ marginBottom: 16 }}>
-        Add New Team
-      </Button>
+      <div className='d-flex justify-content-end mb-3'>
+        <Button type="primary" onClick={() => setAddModalOpen(true)}>
+          Add New Team
+        </Button>
+      </div>
+
+      <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2 }}>
+        <Tab label="Active Teams" />
+        <Tab label="Inactive Teams" />
+      </Tabs>
+
         <Modal
             title="Add New Team"
             open={addModalOpen}
@@ -223,7 +303,43 @@ export default function TeamAccessManager() {
 
         </Modal>
 
-      <Table rowKey="id" columns={columns} dataSource={teams} pagination={false} bordered />
+        <TextField
+                label="Search users"
+                variant="outlined"
+                size="small"
+                fullWidth
+                sx={{ mb: 2 }}
+                value={searchText}
+                onChange={(e) => setSearchText(e.target.value)}
+              />
+        <DataGrid
+                rows={filteredTeams}
+                columns={baseColumns}
+                getRowId={(row) => row.id}
+                paginationModel={paginationModel}
+                onPaginationModelChange={setPaginationModel}
+                pageSizeOptions={[10, 20, 50]}
+                disableRowSelectionOnClick
+                autoHeight
+                slots={{ toolbar: GridToolbar }}
+                sx={{
+                  '& .MuiDataGrid-columnHeader': {
+                    backgroundColor:'#f0f0f0 !important',
+                    fontWeight: 'bold',
+                    fontSize: '1rem',
+                  },
+                  '& .MuiDataGrid-cell': {
+                    fontSize: '0.95rem',
+                    padding: '8px',
+                  },
+                  '& .MuiDataGrid-row': {
+                    borderBottom: `1px solid ${theme.palette.divider}`,
+                  },
+                  '& .MuiDataGrid-footerContainer': {
+                    mt: 2,
+                  },
+                }}
+              />
       <Modal
   title={`Users in ${selectedTeamName}`}
   open={userModalOpen}

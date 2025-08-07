@@ -1,11 +1,18 @@
-import { useEffect, useState } from 'react';
-import { Table, Button, Dropdown, Menu, Typography, message, Modal } from 'antd';
-import { EllipsisOutlined } from '@ant-design/icons';
+import { useEffect, useMemo, useState, type SetStateAction } from 'react';
+import { Button, Typography, message, Modal } from 'antd';
 import axios from '../api/axiosInstance';
 import UserFeatureAccess from './UserFeatureAccess';
 import type { TeamDTO, UserDTO } from '../types/dto';
 import AuditTrail from './AuditTrail';
 import UserFormModal from './UserFormModal';
+import { DataGrid, GridToolbar, type GridColDef , type GridPaginationModel } from '@mui/x-data-grid';
+import { IconButton, Tab, Tabs, TextField, Tooltip, useTheme } from '@mui/material';
+import EditIcon from '@mui/icons-material/Edit';
+import DeleteIcon from '@mui/icons-material/Delete';
+import VisibilityIcon from '@mui/icons-material/Visibility';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
+import HistoryIcon from '@mui/icons-material/History';
+
 
 const { Title } = Typography;
 
@@ -32,6 +39,21 @@ export default function UserAccessManager() {
   const [teams, setTeams] = useState<TeamDTO[]>([]);
 
   const [addModalOpen, setAddModalOpen] = useState(false);
+  const [searchText, setSearchText] = useState('');
+  const [filteredUsers, setFilteredUsers] = useState<UserDTO[]>(users);
+  const theme = useTheme();
+  const [selectedTab, setSelectedTab] = useState(0);
+
+  useEffect(() => {
+    const lowerSearch = searchText.toLowerCase();
+    const userList = selectedTab === 0 ? activeUsers : inActiveUsers;
+    const filtered = userList.filter((user) =>
+      Object.values(user).some((value) =>
+        String(value).toLowerCase().includes(lowerSearch)
+      )
+    );
+    setFilteredUsers(filtered);
+  }, [searchText, users,selectedTab]);
 
   useEffect(() => {
     axios
@@ -41,6 +63,9 @@ export default function UserAccessManager() {
 
     axios.get<TeamDTO[]>('v1/team-access-manager/team/getAll').then((res) => setTeams(res.data || []));
   }, []);
+
+  const activeUsers = users.filter(user => user.active);
+  const inActiveUsers = users.filter(user => !user.active);
 
   const openAccessModal = (user: UserDTO) => {
     setSelectedUser(user);
@@ -161,67 +186,133 @@ export default function UserAccessManager() {
     });
   };
 
-  const columns = [
-    {
-      title: 'Name',
-      dataIndex: 'name',
-    },
-    {
-      title: 'Team Name',
-      dataIndex: 'teamName',
-    },
-    {
-      title: 'Access',
-      render: (_: any, user: UserDTO) => (
-        <Button type="link" onClick={() => openAccessModal(user)}>
-          Manage Permissions
-        </Button>
-      ),
-    },
-    {
-      title: 'Audit Trail',
-      render: (_: any, user: UserDTO) => (
-        <Button type="link" onClick={() => openAuditModal(user.id)}>
-          View Audit
-        </Button>
-      ),
-    },
-    {
-      title: 'Actions',
-      render: (_: any, user: UserDTO) => {
-        const menu = (
-          <Menu>
-            <Menu.Item key="view" onClick={() => openInfoModal(user)}>
-              View Personal Details
-            </Menu.Item>
-            <Menu.Item key="edit" onClick={() => handleEdit(user)}>
-              Edit Personal Details
-            </Menu.Item>
-            <Menu.Item key="delete" danger onClick={() => handleDelete(user)}>
-              Delete User
-            </Menu.Item>
-          </Menu>
-        );
+const columns: GridColDef[] = [
+  {
+    field: 'name',
+    headerName: 'Name',
+    sortable: true,
+    filterable: true,
+    flex: 1,
+    minWidth: 150,
+  },
+  {
+    field: 'email',
+    headerName: 'Email',
+    sortable: true,
+    filterable: true,
+    flex: 1,
+    minWidth: 150,
+  },
+  {
+    field: 'empId',
+    headerName: 'Employee ID',
+    sortable: true,
+    filterable: true,
+    flex: 1,
+    minWidth: 150,
+  },
+  {
+    field: 'teamName',
+    headerName: 'Team Name',
+    sortable: true,
+    filterable: true,
+    flex: 1,
+    minWidth: 150,
+  },
+  {
+    field: 'role',
+    headerName: 'Role',
+    sortable: true,
+    filterable: true,
+    flex: 1,
+    minWidth: 150, 
+  },
+  {
+    field: 'permissions',
+    headerName: 'Permissions',
+    sortable: false,
+    filterable: false,
+    width: 180,
+    renderCell: (params) => (
+      <Button variant="text" onClick={() => openAccessModal(params.row)}>
+        <ManageAccountsIcon fontSize="small" style={{ marginRight: 4 }} />
+        Manage
+      </Button>
+    ),
+  },
+  {
+    field: 'audit',
+    headerName: 'Audit Trail',
+    sortable: false,
+    filterable: false,
+    width: 150,
+    renderCell: (params) => (
+      <Button variant="text" onClick={() => openAuditModal(params.row.id)}>
+        <HistoryIcon fontSize="small" style={{ marginRight: 4 }} />
+        View
+      </Button>
+    ),
+  },
+  {
+    field: 'actions',
+    headerName: 'Actions',
+    sortable: false,
+    filterable: false,
+    width: 150,
+    renderCell: (params) => (
+      <>
+        <Tooltip title="View Details">
+          <IconButton onClick={() => openInfoModal(params.row)}>
+            <VisibilityIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Edit">
+          <IconButton onClick={() => handleEdit(params.row)}>
+            <EditIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+        <Tooltip title="Delete">
+          <IconButton onClick={() => handleDelete(params.row)} color="error">
+            <DeleteIcon fontSize="small" />
+          </IconButton>
+        </Tooltip>
+      </>
+    ),
+  },
+];
 
-        return (
-          <Dropdown overlay={menu} trigger={['click']}>
-            <EllipsisOutlined style={{ fontSize: 20, cursor: 'pointer' }} />
-          </Dropdown>
-        );
-      },
-    },
-  ];
+const baseColumns = useMemo(() => {
+  if (selectedTab === 1) {
+    return columns.filter((col) => col.field !== 'permissions' && col.field !== 'actions');
+  }
+  return columns.filter((col) => col.field !== 'email' && col.field !== 'empId' && col.field !== 'role');
+}, [selectedTab]);
+
+const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
+  pageSize: 10,
+  page: 0,
+});
+
+const handleTabChange = (_event: any, newValue: SetStateAction<number>) => {
+    setSelectedTab(newValue);
+  };
 
   return (
     <div style={{ padding: 24 }}>
       <Title level={4}>User Access Manager</Title>
-      <Button
+      <div className='d-flex justify-content-end mb-3'>
+        <Button
         type="primary"
         onClick={() => setAddModalOpen(true)}
-        style={{ marginBottom: 16 }}
       >
         Add New User
       </Button>
+      </div>
+      
+      <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2 }}>
+        <Tab label="Active Users" />
+        <Tab label="Inactive Users" />
+      </Tabs>
 
       <UserFormModal
         open={addModalOpen}
@@ -245,7 +336,45 @@ export default function UserAccessManager() {
         originalValues={editUser!}
       />
 
-      <Table rowKey="id" columns={columns} dataSource={users} pagination={false} bordered />
+<div style={{ height: 600, width: '100%' }}>
+  <TextField
+        label="Search users"
+        variant="outlined"
+        size="small"
+        fullWidth
+        sx={{ mb: 2 }}
+        value={searchText}
+        onChange={(e) => setSearchText(e.target.value)}
+      />
+  <DataGrid
+        rows={filteredUsers}
+        columns={baseColumns}
+        getRowId={(row) => row.id}
+        paginationModel={paginationModel}
+        onPaginationModelChange={setPaginationModel}
+        pageSizeOptions={[10, 20, 50]}
+        disableRowSelectionOnClick
+        autoHeight
+        slots={{ toolbar: GridToolbar }}
+        sx={{
+          '& .MuiDataGrid-columnHeader': {
+            backgroundColor:'#f0f0f0 !important',
+            fontWeight: 'bold',
+            fontSize: '1rem',
+          },
+          '& .MuiDataGrid-cell': {
+            fontSize: '0.95rem',
+            padding: '8px',
+          },
+          '& .MuiDataGrid-row': {
+            borderBottom: `1px solid ${theme.palette.divider}`,
+          },
+          '& .MuiDataGrid-footerContainer': {
+            mt: 2,
+          },
+        }}
+      />
+</div>
 
       <Modal
         title={`Access for ${selectedUser?.name}`}
