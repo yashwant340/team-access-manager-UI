@@ -2,6 +2,7 @@ export interface TeamDTO {
   id: number;
   name: string;
   userList: UserDTO[];
+  active : boolean;
 }
 
 export interface UserDTO{
@@ -13,7 +14,7 @@ export interface UserDTO{
     teamId :number;
     teamName : string;
     accessMode : string;
-    isActive :boolean;
+    active :boolean;
 }
 
 export interface FeatureDTO {
