@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState, type SetStateAction } from 'react';
-import { Button, Typography, message, Modal } from 'antd';
+import { Button, Typography, Modal } from 'antd';
 import axios from '../api/axiosInstance';
 import UserFeatureAccess from './UserFeatureAccess';
 import type { TeamDTO, UserDTO } from '../types/dto';
@@ -12,6 +12,8 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import HistoryIcon from '@mui/icons-material/History';
+import { useAuth } from '../providers/AuthProvider';
+import { toast } from 'react-toastify';
 
 
 const { Title } = Typography;
@@ -25,6 +27,7 @@ const newFormInitialValues = {
 };
 
 export default function UserAccessManager() {
+  const {user} = useAuth();
   const [users, setUsers] = useState<UserDTO[]>([]);
   const [selectedUser, setSelectedUser] = useState<UserDTO | null>(null);
   const [accessModalOpen, setAccessModalOpen] = useState(false);
@@ -56,10 +59,33 @@ export default function UserAccessManager() {
   }, [searchText, users,selectedTab]);
 
   useEffect(() => {
-    axios
+    if(user?.platformRole === 'PLATFORM_ADMIN'){
+      axios
       .get<UserDTO[]>('/v1/team-access-manager/user/getAll')
       .then((res) => setUsers(res.data || []))
-      .catch(() => message.error('Failed to load users'));
+      .catch(() => toast.error('Failed to load users. Please try again after sometime',
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+          }
+        ));
+      
+    }else if(user?.platformRole === 'TEAM_ADMIN'){
+      axios
+      .get<UserDTO[]>('/v1/team-access-manager/user/teamId/', {
+        params : {
+          teamId : user.teamId
+        }
+      })
+      .then((res) => setUsers(res.data || []))
+      .catch(() => toast.error('Failed to load users. Please try again after sometime',
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+          }));
+    }
 
     axios.get<TeamDTO[]>('v1/team-access-manager/team/getAll').then((res) => setTeams(res.data || []));
   }, []);
@@ -94,7 +120,13 @@ export default function UserAccessManager() {
 
     axios.post<UserDTO>('v1/team-access-manager/user/updateUser', updatedUser).then(() => {
       setUsers((prev) => prev.map((u) => (u.id === updatedUser.id ? updatedUser : u)));
-      message.info('User Details updated successfully');
+      toast.success('User details edited successfully',
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+          }
+        );
       setEditModalOpen(false);
       setEditUser(null);
     });
@@ -115,7 +147,12 @@ export default function UserAccessManager() {
       });
       setAuditData(res.data || []);
     } catch {
-      message.error('Failed to fetch audit trail');
+      toast.error('Failed to fetch audit data. Please try again after sometime',
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+          });
     } finally {
       setAuditLoading(false);
     }
@@ -133,6 +170,12 @@ export default function UserAccessManager() {
     };
 
     axios.post<UserDTO>('/v1/team-access-manager/user/addNew', payload).then((res) => {
+      toast.success('User has been added successfully',
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+          });
       const result = {
         ...res.data,
         teamName: teams.find((x) => x.id === res.data.teamId)?.name || '',
@@ -156,9 +199,20 @@ export default function UserAccessManager() {
           })
           .then(() => {
             setUsers((prev) => prev.filter((u) => u.id !== user.id));
-            message.success('User deleted');
+            toast.success('User has been deleted successfully',
+            {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: false
+            });
           })
-          .catch(() => message.error('Failed to delete user'));
+          .catch(() => toast.error('Failed to delete the user. Please try again after sometime',
+            {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: false
+            })
+        )
       },
     });
   };

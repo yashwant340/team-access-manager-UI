@@ -36,7 +36,6 @@ export default function UserFormModal({
   teams,
   initialValues,
   mode,
-  originalValues
 }: Props) {
   const [formValues, setFormValues] = useState(initialValues);
   const [formValidation, setFormValidation] = useState(initialValidation);
@@ -54,10 +53,7 @@ export default function UserFormModal({
   ? JSON.stringify(formValues) !== JSON.stringify(initialValues)
   : true;
 
-  console.log(originalValues)
-  console.log(isEdited)
-  console.log(mode)
- console.log((mode === 'edit' && !isEdited))
+  
   const isFormValid = () => {
     return Object.values(formValidation).every((val) => val);
   };

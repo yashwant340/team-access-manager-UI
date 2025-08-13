@@ -1,5 +1,12 @@
-export function getDashboardRoute(roles: string[]): string {
-  if (roles.includes('PLATFORM_ADMIN')) return '/platform-admin';
-  if (roles.includes('TEAM_ADMIN')) return '/team-admin';
-  return '/user-dashboard';
+export function getDashboardRoute(platformRole?: string | null): string {
+  if (!platformRole) return '/user-dashboard';
+  switch (platformRole) {
+    case 'PLATFORM_ADMIN':
+      return '/platform-admin';
+    case 'TEAM_ADMIN':
+      return '/team-admin';
+    case 'USER':
+    default:
+      return '/user-dashboard';
+  }
 }

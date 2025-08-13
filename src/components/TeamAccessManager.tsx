@@ -1,16 +1,17 @@
 import  { useEffect, useMemo, useState, type SetStateAction } from 'react';
-import {  Button, Modal, Typography, message } from 'antd';
+import {  Button, Modal, Typography } from 'antd';
 import axios from '../api/axiosInstance';
-import type {  TeamDTO, UserDTO } from '../types/dto';
+import type {   TeamDTO, UserDTO } from '../types/dto';
 import TeamFeatureAccess from './TeamFeatureAccess';
 import { useStoreState, useStoreActions } from '../store/hooks';
 import AuditTrail from './AuditTrail';
 import { DataGrid, GridToolbar, type GridColDef, type GridPaginationModel } from '@mui/x-data-grid';
 import DeleteIcon from '@mui/icons-material/Delete';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
-import HistoryIcon from '@mui/icons-material/History';
-import { IconButton, Tab, Tabs, TextField, Tooltip, useTheme } from '@mui/material';
+import {History as HistoryIcon} from '@mui/icons-material';
+import {  IconButton, Tab, Tabs, TextField, Tooltip, useTheme } from '@mui/material';
 import { useAuth } from '../providers/AuthProvider';
+import { toast } from 'react-toastify';
 
 const { Title } = Typography;
 
@@ -38,6 +39,7 @@ export default function TeamAccessManager() {
     const [filteredTeams, setFilteredTeams] = useState<TeamDTO[]>(teams);
     const [selectedTab, setSelectedTab] = useState(0);
 
+
     useEffect(() => {
       const lowerSearch = searchText.toLowerCase();
       const teamList = selectedTab === 0 ? activeTeams : inActiveTeams;
@@ -52,6 +54,8 @@ export default function TeamAccessManager() {
     const activeTeams = teams.filter(team => team.active);
     const inActiveTeams = teams.filter(team => !team.active);
 
+    
+
     const openAuditModal = async (teamId: number) => {
         setAuditModalOpen(true);
         setAuditLoading(true);
@@ -61,7 +65,13 @@ export default function TeamAccessManager() {
             });
             setAuditData(res.data || []);
         } catch {
-            message.error('Failed to fetch audit trail');
+           toast.error('Failed to fetch audit trail. Please try again after sometime',
+                {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false
+                }
+            );
         } finally {
             setAuditLoading(false);
         }
@@ -75,21 +85,32 @@ export default function TeamAccessManager() {
 
     const fetchTeams = async () => {
       try{
-        
         if (user?.platformRole === "PLATFORM_ADMIN") {
           const response = await axios.get<TeamDTO[]>('/v1/team-access-manager/team/getAll');
           setTeams(response.data);
-        }else if (user?.platformRole === "TEAM_ADMIN") {
-          const response = await axios.get<TeamDTO[]>('/v1/team-access-manager/team/getAll');
+        } else if (user?.platformRole === "TEAM_ADMIN") {
+          const response = await axios.get<TeamDTO[]>('/v1/team-access-manager/team/',
+            {
+              params : {
+                teamId : user.teamId
+              }
+            }
+          );
           setTeams(response.data);
         }
-      }catch (error) {
-        message.error('Error fetching users');
+      } catch (error) {
+        toast.error('Error fetching team data. Please try again after sometime',
+                {
+                    position: "top-right",
+                    autoClose: 5000,
+                    hideProgressBar: false
+                }
+        );
       }
     }
     
     useEffect(() => {
-      fetchTeams()
+      fetchTeams();
     }, []);
 
     const confirmDeleteTeam = (team: TeamDTO) => {
@@ -116,7 +137,13 @@ export default function TeamAccessManager() {
 
   const handleAddTeam = () => {
     if (!newTeamName.trim()) {
-        message.warning('Please enter a team name');
+        toast.warning('Please enter a team name', 
+              {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false
+              }
+            );
         return;
     }
 
@@ -128,17 +155,28 @@ export default function TeamAccessManager() {
     axios.post('/v1/team-access-manager/team/addNew', {
         name: newTeamName,
         accessList : accessList
-    })
-        .then((res) => {
+    }).then((res) => {
         setTeams((prev) => [...prev, res.data]);
         setAddModalOpen(false);
         setNewTeamName('');
         setSelectedFeatures([]);
-        message.success('Team created successfully');
+        toast.success('Team has been created Successfully', 
+              {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false
+              }
+            );        
         })
         .catch(() => {
-        message.error('Failed to create team');
-        });
+            toast.error('Failed to create team. Please try again after sometime.', 
+              {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false
+              }
+            );        
+          });
 };
 
     const handleDeleteTeam = (team: TeamDTO) => {
@@ -147,6 +185,13 @@ export default function TeamAccessManager() {
                 teamId : team.id,
             }
         }).then(() => {
+            toast.success('Team has been deleted Successfully', 
+              {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false
+              }
+            );
             fetchTeams();
         })
     }
@@ -352,22 +397,22 @@ export default function TeamAccessManager() {
                 }}
               />
       <Modal
-  title={`Users in ${selectedTeamName}`}
-  open={userModalOpen}
-  onCancel={() => setUserModalOpen(false)}
-  footer={null}
->
-  <ul>
-    {selectedUsers.map((user) => (
-      <li key={user.id}>
-        {user.name} ({user.email})
-      </li>
-    ))}
-  </ul>
-  <p style={{ marginTop: 16, fontStyle: 'italic', color: '#888' }}>
-    To view or edit individual user access, please navigate to the <strong>User Access View</strong>.
-  </p>
-</Modal>
+        title={`Users in ${selectedTeamName}`}
+        open={userModalOpen}
+        onCancel={() => setUserModalOpen(false)}
+        footer={null}
+      >
+        <ul>
+          {selectedUsers.map((user) => (
+            <li key={user.id}>
+              {user.name} ({user.email})
+            </li>
+          ))}
+        </ul>
+        <p style={{ marginTop: 16, fontStyle: 'italic', color: '#888' }}>
+          To view or edit individual user access, please navigate to the <strong>User Access View</strong>.
+        </p>
+      </Modal>
 
       <Modal
         title={`Permissions for ${selectedTeam?.name}`}
@@ -376,7 +421,7 @@ export default function TeamAccessManager() {
         footer={null}
         width={700}
       >
-        {selectedTeam && <TeamFeatureAccess teamId={selectedTeam.id} />}
+        {selectedTeam && <TeamFeatureAccess teamId={selectedTeam.id} onCancel={closeModal} />}
       </Modal>
 
       <Modal>
@@ -391,6 +436,8 @@ export default function TeamAccessManager() {
                 loading={auditLoading}
             />
         )}
+
+        
 
     </div>
   );
