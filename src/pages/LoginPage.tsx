@@ -23,8 +23,10 @@ const LoginPage: React.FC = () => {
     setRequestAccessModalOpen(false);
   }
 
-  const handleForgotPasswordOpen = () => {
+  
 
+  const handleForgotPasswordOpen = () => {
+      navigate("/forgot-password")
   }
 
   const handleLogin = async (e?: React.FormEvent) => {
@@ -60,7 +62,7 @@ const LoginPage: React.FC = () => {
   return (
     <Box display="flex" flexDirection="column" maxWidth={400} margin="auto" mt={10} gap={2}>
       <Paper sx={{ p: 4, maxWidth: 400, width: '100%' }}>
-        <Typography variant="h5" gutterBottom>Team Access Manager</Typography>
+        <Typography variant="h5" gutterBottom>Team Access Manager Login </Typography>
         <TextField style = {{padding: 8}} label="Username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
         <TextField style = {{padding: 8}} label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
 

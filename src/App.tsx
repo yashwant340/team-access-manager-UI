@@ -9,6 +9,7 @@ import store from './store';
 import { AuthProvider } from './providers/AuthProvider';
 import PrivateRoute from './components/PrivateRoute';
 import { ToastContainer } from 'react-toastify';
+import ResetPassword from './pages/ResetPassword';
 
 
 const App: React.FC = () => {
@@ -53,6 +54,8 @@ const App: React.FC = () => {
                 </PrivateRoute>
               }
             />
+
+            <Route path='/forgot-password' element={<ResetPassword />} />
 
             <Route path="/not-found" element={<NotFound />} />
             <Route path="*" element={<NotFound />} />

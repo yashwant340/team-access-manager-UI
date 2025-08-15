@@ -26,9 +26,34 @@ export default function LoginRequest(){
         fetchTeams();
     },[]);
 
+    const handleApprove =async() => {
+        try{
+        await axios.post('/v1/team-access-manager/admin/login-request/approve',null,{
+            params:{
+                reqId: currRequesData?.id,
+                teamId: selectedTeam?.id
+            }
+        });
+        fetchLoginRequests();
+        toast.success('Login request successfully approved.', {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+        })
+        }catch{
+            toast.error('Failed to approve login request. Please try again after sometime',{
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+            })
+        }finally{
+            setDialogOpen(false);
+        }
+    }
+
     const fetchLoginRequests = async() => {
       try{
-        const res = await axios.get<LoginRequestDTO[]>('/v1/team-access-manager/team/pending-login-request');
+        const res = await axios.get<LoginRequestDTO[]>('/v1/team-access-manager/admin/login-request/pending');
         setLoginRequestData(res.data);
       }catch{
         toast.error('Failed to fetch login requests. Please try again after sometime',{
@@ -100,6 +125,8 @@ export default function LoginRequest(){
             ),
         },
     ]
+
+
 
     const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
           pageSize: 10,
@@ -212,6 +239,7 @@ export default function LoginRequest(){
                           color="success"
                           startIcon={<CheckCircleIcon />}
                           disabled={selectedTeam === undefined }
+                          onClick={handleApprove}
                         >
                           Approve
                         </Button>
