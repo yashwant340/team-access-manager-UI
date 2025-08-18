@@ -37,9 +37,9 @@ This is the **React** frontend for the project.
 - #### Framework: React (with TypeScript)
 
 - #### Key Libraries:
-    -Material UI (MUI) – prebuilt UI component library for consistent design
-    -Axios – library for making API calls
-    -React Router – library for client-side routing/navigation
+    - Material UI (MUI)
+    - Axios
+    - React Router
 
 ## ✨ Features
 - JWT-based Login
