@@ -11,8 +11,7 @@ A secure, full-stack application for managing user and team access in organizati
 
 - **Authentication & Security**
   - JWT-based login/logout
-  - Role-based access (Admin vs User)
-  - Session expiration warning + refresh
+  - Role-based access (Platform Admin, Team Admin and User)
 - **User Onboarding**
   - Request Access workflow
   - Admin approval process
@@ -21,11 +20,12 @@ A secure, full-stack application for managing user and team access in organizati
   - OTP-based verification + reset
 - **Dashboards**
   - User Dashboard
-  - Admin Dashboard (manage users, permissions)
+  - Team Admin Dashboard (manage users, permissions and requests limited to the team scope)
+  - Platform Admin Dashboard (manage teams, users, permissions and login requests)
 - **Audit & Logs**
-  - Track user activity and requests
+  - Track user and admins activity.
 - **Notifications**
-  - Email alerts for approvals, onboarding, and password resets
+  - Email alerts for onboarding, and password resets
 
 ---
 
@@ -34,19 +34,20 @@ A secure, full-stack application for managing user and team access in organizati
 This is the **React** frontend for the project.
 
 ## ⚙️ Tech Stack
-- React + TypeScript
-- Material UI (MUI)
-- Axios
-- React Router
+- #### Framework: React (with TypeScript)
+
+- #### Key Libraries:
+    -Material UI (MUI) – prebuilt UI component library for consistent design
+    -Axios – library for making API calls
+    -React Router – library for client-side routing/navigation
 
 ## ✨ Features
 - JWT-based Login
 - “Request Access” Form
 - OTP-based Forgot Password Flow
 - User Dashboard
-- Admin Dashboard (manage users & permissions)
+- Admin Dashboard for team admin and platform admin (manage users & permissions)
 - Audit Trail Display
-- Session Expiry Popup + Refresh
 
 ---
 
