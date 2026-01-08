@@ -1,14 +1,16 @@
 import { useEffect, useState } from 'react';
-import { Table, Switch, Button, message, Spin } from 'antd';
+import { Table, Switch, Button, Spin } from 'antd';
 import axios from '../api/axiosInstance';
 import type { TeamAccessControlDTO } from '../types/dto';
+import { toast } from 'react-toastify';
 
 
 interface Props {
   teamId: number;
+  onCancel: () => void;
 }
 
-export default function TeamFeatureAccess({ teamId }: Props) {
+export default function TeamFeatureAccess({ teamId, onCancel}: Props) {
   const [features, setFeatures] = useState<TeamAccessControlDTO[]>([]);
   const [accessMap, setAccessMap] = useState<Record<number, boolean>>({});
   const [loading, setLoading] = useState<boolean>(true);
@@ -27,14 +29,20 @@ export default function TeamFeatureAccess({ teamId }: Props) {
       .then((res) => {
         const list = res.data.teamAccessControlDTOS || [];
         setFeatures(list);
-
         const initialMap: Record<number, boolean> = {};
         list.forEach((item) => {
           initialMap[item.featureId] = item.hasAccess;
         });
         setAccessMap(initialMap);
       })
-      .catch(() => message.error('Failed to load team feature access'))
+      .catch(() => 
+        toast.error('Failed to fetch team feature access. Please try again after sometime',
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+          }
+        ))
       .finally(() => setLoading(false));
   }, [teamId]);
 
@@ -56,6 +64,13 @@ export default function TeamFeatureAccess({ teamId }: Props) {
     axios
       .post(`/v1/team-access-manager/team/updateAccess`, payload)
       .then((res) => {
+            toast.success('Access updated successfully',
+            {
+              position: "top-right",
+              autoClose: 5000,
+              hideProgressBar: false
+            }
+          )
             const updatedItems = res.data as TeamAccessControlDTO[];
 
             const mergedFeatures = features.map((f) => {
@@ -71,10 +86,19 @@ export default function TeamFeatureAccess({ teamId }: Props) {
             });
             return nextMap;
             });
-            message.success('Team feature access updated')
         })
-      .catch(() => message.error('Failed to save access changes'))
-      .finally(() => setSaving(false));
+      .catch(() => toast.success('Failed to save updated accesses. Please try again after sometime',
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+          }
+        ))
+      .finally(() => 
+        {
+          setSaving(false);
+          onCancel();
+        });
   };
 
   const columns = [

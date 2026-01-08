@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Typography, Segmented, message } from 'antd';
+import { Table, Button, Typography, Segmented } from 'antd';
 import axios from '../api/axiosInstance';
 import type { AccessControlDTO, UserAccessControlDTO, TeamAccessControlDTO } from '../types/dto';
+import { toast } from 'react-toastify';
 
 interface Props {
   userId: number;
@@ -81,7 +82,12 @@ export default function UserFeatureAccess({ userId, initialOverride, onClose, on
         setFeatureMap(initialMap);
         setOriginalFeatureMap(initialMap);
       })
-      .catch(() => message.error('Failed to load user access'))
+      .catch(() => toast.error('Failed to load user access. Please try again after sometime',
+                {
+                  position: "top-right",
+                  autoClose: 5000,
+                  hideProgressBar: false
+                }))
       .finally(() => setLoading(false));
   }, [userId]);
 
@@ -128,13 +134,25 @@ export default function UserFeatureAccess({ userId, initialOverride, onClose, on
   axios
     .post('/v1/team-access-manager/user/updateAccessMode', payload)
     .then(() => {
-      message.success('User access updated');
+      toast.success('User access updated successfully',
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+          }
+        );
       setOriginalMode(accessMode);
       setOriginalFeatureMap({ ...featureMap });
       onAccessModeChange(userId, accessMode);
       onClose();
     })
-    .catch(() => message.error('Failed to save user access'))
+    .catch(() => toast.error('Failed to update user accesses. Please try again after sometime.',
+          {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false
+          }
+        ))
     .finally(() => setSaving(false));
 };
 
