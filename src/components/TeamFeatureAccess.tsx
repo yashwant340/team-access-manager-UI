@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Switch, Button, Spin } from 'antd';
+import { Table, Switch, Button, Spin, Typography, Tag, Space, Empty } from 'antd';
 import axios from '../api/axiosInstance';
 import type { TeamAccessControlDTO } from '../types/dto';
 import { toast } from 'react-toastify';
@@ -87,7 +87,7 @@ export default function TeamFeatureAccess({ teamId, onCancel}: Props) {
             return nextMap;
             });
         })
-      .catch(() => toast.success('Failed to save updated accesses. Please try again after sometime',
+      .catch(() => toast.error('Failed to save updated accesses. Please try again after sometime',
           {
             position: "top-right",
             autoClose: 5000,
@@ -105,9 +105,18 @@ export default function TeamFeatureAccess({ teamId, onCancel}: Props) {
     {
       title: 'Feature',
       dataIndex: 'featureName',
+      render: (name: string) => <Typography.Text strong>{name}</Typography.Text>,
     },
     {
-      title: 'Access',
+      title: 'Status',
+      render: (_: any, record: TeamAccessControlDTO) => (
+        <Tag className={accessMap[record.featureId] ? 'permission-status-tag is-granted' : 'permission-status-tag'}>
+          {accessMap[record.featureId] ? 'Granted' : 'Not granted'}
+        </Tag>
+      ),
+    },
+    {
+      title: 'Permission',
       render: (_: any, record: TeamAccessControlDTO) => (
         <Switch
           checked={accessMap[record.featureId] || false}
@@ -118,24 +127,32 @@ export default function TeamFeatureAccess({ teamId, onCancel}: Props) {
   ];
 
   return loading ? (
-    <Spin size="large" />
+    <div className="modal-loading-state"><Spin size="large" /><Typography.Text type="secondary">Loading permissions…</Typography.Text></div>
   ) : (
-    <>
+    <div className="permission-editor">
+      <div className="modal-intro">
+        <div>
+          <Typography.Title level={5}>Team permissions</Typography.Title>
+          <Typography.Paragraph type="secondary">Choose which product features members of this team can use.</Typography.Paragraph>
+        </div>
+        <Tag className="permission-count-tag">{features.filter((feature) => accessMap[feature.featureId]).length} of {features.length} granted</Tag>
+      </div>
       <Table
+        className="modal-table"
         rowKey="featureId"
         columns={columns}
         dataSource={features}
         pagination={false}
         bordered
+        locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No features configured" /> }}
       />
-      <Button
-        type="primary"
-        onClick={handleSave}
-        loading={saving}
-        style={{ marginTop: 16 }}
-      >
-        Save Changes
-      </Button>
-    </>
+      <div className="modal-actions">
+        <Typography.Text type="secondary">Changes apply to all team members.</Typography.Text>
+        <Space>
+          <Button onClick={onCancel}>Cancel</Button>
+          <Button type="primary" onClick={handleSave} loading={saving} disabled={!features.some((feature) => accessMap[feature.featureId] !== feature.hasAccess)}>Save changes</Button>
+        </Space>
+      </div>
+    </div>
   );
 }

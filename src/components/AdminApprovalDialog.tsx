@@ -58,11 +58,12 @@ export default function AdminApprovalDialog({
   },[requestData]);
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
+    <Dialog className="polished-dialog approval-dialog" open={open} onClose={onClose} fullWidth maxWidth="sm">
       <DialogTitle>
         <Typography variant="h6" fontWeight="bold">
-          User Access Request
+          Review access request
         </Typography>
+        <Typography variant="body2" color="text.secondary">Review the request and its effect before making a decision.</Typography>
       </DialogTitle>
 
       <DialogContent dividers>
@@ -70,7 +71,7 @@ export default function AdminApprovalDialog({
         <Typography variant="subtitle2" gutterBottom>
           Request Summary
         </Typography>
-        <Stack spacing={1}>
+        <Stack spacing={1} className="request-summary-card">
           <Box display="flex" alignItems="center">
             <PersonIcon sx={{ mr: 1, color: "primary.main" }} />
             {requestData?.name} ({requestData?.email})
@@ -95,14 +96,11 @@ export default function AdminApprovalDialog({
         <Typography variant="subtitle2" gutterBottom>
           Current Access Snapshot
         </Typography>
-        <Stack spacing={0.5}>
-          <Typography>Mode: {requestData?.accessMode}</Typography>
-          <Typography>
-            Current Feature Access: {"NO"}
-          </Typography>
+        <Stack spacing={0.75} className="access-snapshot">
+          <Box><Typography variant="caption" color="text.secondary">Access mode</Typography><Typography fontWeight={650}>{requestData?.accessMode === 'INHERIT_TEAM_ACCESS' ? 'Inherited from team' : 'Custom override'}</Typography></Box>
+          <Box><Typography variant="caption" color="text.secondary">Current feature access</Typography><Typography fontWeight={650}>Not granted</Typography></Box>
           
-          <Typography>
-            Other Features:{" "}
+          <Box><Typography variant="caption" color="text.secondary">Other features</Typography><Typography>
             {requestData? requestData.otherFeatures.userAccessControlDTOS !== null ? 
               requestData.otherFeatures.userAccessControlDTOS.map(
                 (f) => `${f.hasAccess ? "✔" : "❌"} ${f.featureName}`
@@ -111,7 +109,7 @@ export default function AdminApprovalDialog({
                 (f) => `${f.hasAccess ? "✔" : "❌"} ${f.featureName}`
               )
               .join("   ") : "N/A"}
-          </Typography>
+          </Typography></Box>
         </Stack>
 
         <Divider sx={{ my: 2 }} />
@@ -120,7 +118,7 @@ export default function AdminApprovalDialog({
         <Typography variant="subtitle2" gutterBottom>
           Impact Preview
         </Typography>
-        <ul>
+        <ul className="impact-list">
           {impactPreview.map((impact, idx) => (
             <li key={idx}>
               <Typography>{impact}</Typography>
@@ -141,7 +139,7 @@ export default function AdminApprovalDialog({
         />
       </DialogContent>
 
-      <DialogActions>
+      <DialogActions className="dialog-actions decision-actions">
         <Button
           variant="contained"
           color="error"

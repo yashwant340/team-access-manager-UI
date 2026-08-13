@@ -134,8 +134,14 @@ export default function LoginRequest(){
         });
         
     return (
-        <div style={{ padding: 24 }}>
-            <div style={{ height: 600, width: '100%' }}>
+        <div className="login-request-view">
+            <div className="login-request-heading">
+              <div>
+                <Typography variant="h5" fontWeight={750}>Login requests</Typography>
+                <Typography variant="body2" color="text.secondary">Review new account requests and assign each person to a team.</Typography>
+              </div>
+            </div>
+            <div className="login-request-table app-surface">
               <DataGrid
                     rows={loginRequestData}
                     columns={columns}
@@ -162,45 +168,34 @@ export default function LoginRequest(){
                       '& .MuiDataGrid-footerContainer': {
                         mt: 2,
                       },
-                    }}
+                  }}
                   />
             </div>
 
             {isDialogOpen && 
-            <Dialog open={isDialogOpen} onClose={closeDialog} fullWidth maxWidth="sm">
+            <Dialog className="polished-dialog approval-dialog" open={isDialogOpen} onClose={closeDialog} fullWidth maxWidth="sm">
                 <DialogTitle>
-                    <Typography variant="h6" fontWeight="bold">
-                        User Login Request
-                    </Typography>
+                    <Typography variant="h6" fontWeight={750}>Review login request</Typography>
+                    <Typography variant="body2" color="text.secondary">Confirm the requester’s details and assign their team.</Typography>
                 </DialogTitle>
                 <DialogContent dividers>
-                    <Stack spacing={1}>
-                        <Box display="flex" alignItems="center">
-                            Name: {currRequesData?.name} 
-                        </Box>
-                        <Box display="flex" alignItems="center">
-                            Email: ({currRequesData?.email})
-                        </Box>
-                        <Box display="flex" alignItems="center">
-                            Employee Id:{currRequesData?.empId}
-                        </Box>
-                        <Box display="flex" alignItems="center">
-                            Team mentioned by User : {currRequesData?.team}
-                        </Box>
-                        <Box display="flex" alignItems="center">
-                            Role: {currRequesData?.role}
-                        </Box>
-                        <Box display="flex" alignItems="center">
-                            Requested On: {currRequesData?.createdDate}
-                        </Box>
-                        
-                    </Stack>
+                    <Box className="request-summary-card">
+                        <Stack spacing={1.25}>
+                            <Box className="summary-row"><Typography color="text.secondary">Name</Typography><Typography fontWeight={700}>{currRequesData?.name || '—'}</Typography></Box>
+                            <Box className="summary-row"><Typography color="text.secondary">Email</Typography><Typography>{currRequesData?.email || '—'}</Typography></Box>
+                            <Box className="summary-row"><Typography color="text.secondary">Employee ID</Typography><Typography>{currRequesData?.empId || '—'}</Typography></Box>
+                            <Box className="summary-row"><Typography color="text.secondary">Requested team</Typography><Typography>{currRequesData?.team || '—'}</Typography></Box>
+                            <Box className="summary-row"><Typography color="text.secondary">Role</Typography><Typography>{currRequesData?.role || '—'}</Typography></Box>
+                            <Box className="summary-row"><Typography color="text.secondary">Requested on</Typography><Typography>{currRequesData?.createdDate || '—'}</Typography></Box>
+                        </Stack>
+                    </Box>
                     <Divider sx={{ my: 2 }} />
-
-                    Please select the team to map with user
+                    <Typography component="label" htmlFor="team-select" variant="body2" fontWeight={700}>Assign to team</Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mt: .5, mb: 1.25 }}>This team determines the user’s inherited permissions.</Typography>
                     <Input
                         type="select"
                         id="team-select"
+                        className="modal-select-input"
                         value={selectedTeam?.name || ''}
                         onChange={(e) => {
                             const selectedTeamName = e.target.value;
@@ -210,7 +205,7 @@ export default function LoginRequest(){
                         required
                     >
                         <option value="" disabled>
-                        -- Choose a team --
+                        Choose a team
                         </option>
                         {teams?.map((team) => (
                         <option key={team.id} value={team.name}>
@@ -220,7 +215,7 @@ export default function LoginRequest(){
                     </Input>
 
                 </DialogContent>
-                <DialogActions>
+                <DialogActions className="dialog-actions decision-actions">
                         <Button
                           variant="contained"
                           color="error"

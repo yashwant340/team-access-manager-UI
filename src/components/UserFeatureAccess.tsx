@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Table, Button, Typography, Segmented } from 'antd';
+import { Table, Button, Typography, Segmented, Tag, Empty } from 'antd';
 import axios from '../api/axiosInstance';
 import type { AccessControlDTO, UserAccessControlDTO, TeamAccessControlDTO } from '../types/dto';
 import { toast } from 'react-toastify';
@@ -195,20 +195,28 @@ export default function UserFeatureAccess({ userId, initialOverride, onClose, on
 
 
   return (
-    <div style={{ padding: 12 }}>
-      <Typography.Title level={5}>Access Mode</Typography.Title>
-      <Segmented
+    <div className="permission-editor">
+      <div className="modal-intro">
+        <div>
+          <Typography.Title level={5}>Access mode</Typography.Title>
+          <Typography.Text type="secondary">Inherit team permissions or manage this user independently.</Typography.Text>
+        </div>
+      </div>
+      <div className="access-mode-card"><Segmented
         options={[
             { label: 'Inherit', value: 'INHERIT_TEAM_ACCESS' },
             { label: 'Override', value: 'OVERRIDE_TEAM_ACCESS' },
         ]}
         value={accessMode}
         onChange={(val) => setAccessMode(val as 'INHERIT_TEAM_ACCESS' | 'OVERRIDE_TEAM_ACCESS')}
-        style={{ marginBottom: 16 }}
+        block
         />
+        <Typography.Text type="secondary">{accessMode === 'OVERRIDE_TEAM_ACCESS' ? 'Custom access is set specifically for this user.' : 'Access follows the permissions configured for this user’s team.'}</Typography.Text>
+      </div>
 
-      <Typography.Title level={5}>Feature Access</Typography.Title>
+      <div className="permission-section-heading"><Typography.Title level={5}>Feature access</Typography.Title><Tag color={accessMode === 'OVERRIDE_TEAM_ACCESS' ? 'purple' : 'blue'}>{accessMode === 'OVERRIDE_TEAM_ACCESS' ? 'Custom' : 'Inherited'}</Tag></div>
       <Table
+        className="modal-table"
         rowKey={(record) => record.featureId}
         dataSource={getCurrentAccessList()}
         pagination={false}
@@ -227,15 +235,12 @@ export default function UserFeatureAccess({ userId, initialOverride, onClose, on
         ]}
         bordered
         loading={loading}
+        locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No features configured" /> }}
       />
 
-      <div style={{ marginTop: 24, textAlign: 'right' }}>
-        <Button onClick={onClose} style={{ marginRight: 12 }}>
-          Cancel
-        </Button>
-        <Button type="primary" disabled={!hasChanges()} onClick={handleSave} loading={saving}>
-          Save Changes
-        </Button>
+      <div className="modal-actions">
+        <Typography.Text type="secondary">{hasChanges() ? 'You have unsaved changes.' : 'No changes to save.'}</Typography.Text>
+        <div className="modal-action-buttons"><Button onClick={onClose}>Cancel</Button><Button type="primary" disabled={!hasChanges()} onClick={handleSave} loading={saving}>Save changes</Button></div>
       </div>
     </div>
   );

@@ -3,14 +3,26 @@ import React from 'react';
 import { Layout } from 'antd';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../providers/AuthProvider';
-import { AppBar, Toolbar, Typography, Box, IconButton, Menu, MenuItem, Button } from '@mui/material';
+import { Toolbar, Typography, Box, Button, Menu, MenuItem, Avatar, Chip } from '@mui/material';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 
 const { Header, Content } = Layout;
 
+const roleLabel = (platformRole?: string) => {
+  switch (platformRole) {
+    case 'PLATFORM_ADMIN':
+      return 'Platform admin';
+    case 'TEAM_ADMIN':
+      return 'Team admin';
+    default:
+      return 'Member';
+  }
+};
+
 const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { logout, user } = useAuth();
   const navigate = useNavigate();
+  const role = roleLabel(user?.platformRole);
 
   const handleLogout = () => {
     logout();            // Clear token and user state
@@ -28,46 +40,42 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 
   return (
     
-    <Layout>
-       <Header
-        style={{
-          background: '#001529',
-          color: '#fff',
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          padding: '0 24px',
-        }}
-      >
-    <AppBar position="static" style={{background: '#001529'}}>
-      <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-        <Typography variant="h6">Dashboard - {user?.platformRole === 'PLATFORM_ADMIN'? 'Platform Admin' : 'Team Admin'}</Typography>
+    <Layout className="page-shell">
+      <Header className="app-header">
+        <Toolbar className="app-header-toolbar" disableGutters>
+          <Box className="app-brand">
+            <Box className="app-brand-mark">AM</Box>
+            <Box>
+              <Typography className="app-brand-name">Access Management</Typography>
+            </Box>
+          </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-          <Button variant="contained" color="info" onClick={handleLogout}>
-            Logout
-          </Button>
-
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-            <Typography>{user?.username || 'no user'}</Typography>
-            <IconButton color="inherit" onClick={handleMenuOpen}>
-              <AccountCircleIcon fontSize="large" />
-            </IconButton>
-
+          <Box className="header-account">
+            <Chip className="header-role-chip" label={role} size="small" />
+            <Button
+              className="header-profile-button"
+              onClick={handleMenuOpen}
+              aria-controls={anchorEl ? 'account-menu' : undefined}
+              aria-haspopup="true"
+              aria-expanded={anchorEl ? 'true' : undefined}
+              startIcon={<Avatar className="header-avatar">{user?.username?.charAt(0).toUpperCase() || <AccountCircleIcon fontSize="small" />}</Avatar>}
+            >
+              <Box className="header-profile-copy"><Typography component="span">{user?.username || 'Account'}</Typography><Typography component="span">Account menu</Typography></Box>
+            </Button>
             <Menu
+              id="account-menu"
+              className="header-account-menu"
               anchorEl={anchorEl}
               open={Boolean(anchorEl)}
               onClose={handleMenuClose}
             >
-              <MenuItem disabled>Username : {user?.username || 'no user'}</MenuItem>
-              <MenuItem onClick={handleLogout}>Logout</MenuItem>
+              <MenuItem disabled className="header-menu-identity">Signed in as {user?.username || 'Account'}</MenuItem>
+              <MenuItem onClick={handleLogout}>Log out</MenuItem>
             </Menu>
           </Box>
-        </Box>
-      </Toolbar>
-    </AppBar>
-    </Header>
-    <Content style={{ padding: '24px' }}>{children}</Content>
+        </Toolbar>
+      </Header>
+    <Content className="app-content">{children}</Content>
     </Layout>
   );
 };

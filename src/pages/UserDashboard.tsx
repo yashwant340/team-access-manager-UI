@@ -291,14 +291,18 @@ export default function UserDashboard() {
     page: 0,
   });
     
-    if (loading) return <Typography>Loading...</Typography>;
+    if (loading) return <DashboardLayout><Typography color="text.secondary">Loading your dashboard...</Typography></DashboardLayout>;
 
   return (
     <DashboardLayout>
     
-    <Box p={3} display="flex" flexDirection="column" gap={3}>
-      <Typography variant="h4">My Dashboard</Typography>
-      <Accordion>
+    <Box className="member-dashboard" display="flex" flexDirection="column" gap={2.5}>
+      <Box className="app-surface dashboard-hero" sx={{ p: { xs: 2.5, md: 3.5 } }}>
+        <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: '.13em' }}>MEMBER WORKSPACE</Typography>
+        <Typography variant="h4" sx={{ mt: .5 }}>Member Dashboard</Typography>
+        <Typography color="text.secondary">Review your profile, access, and account activity.</Typography>
+      </Box>
+      <Accordion className="member-dashboard-section">
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6" gutterBottom>
             My Personal Info
@@ -339,7 +343,7 @@ export default function UserDashboard() {
         </AccordionDetails>
       </Accordion>
 
-      <Accordion defaultExpanded>
+      <Accordion className="member-dashboard-section" defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6" gutterBottom>
             My Accesses
@@ -351,7 +355,7 @@ export default function UserDashboard() {
             <Tab label="Current Access" />
             <Tab label="Pending Requests" />
           </Tabs>
-          <div style={{width: '100%' }}>
+          <div className="responsive-grid-wrap">
             <TextField
                   label="Search users"
                   variant="outlined"
@@ -374,7 +378,7 @@ export default function UserDashboard() {
                   slots={{ toolbar: GridToolbar }}
                   sx={{
                     '& .MuiDataGrid-columnHeader': {
-                      backgroundColor:'#f0f0f0 !important',
+                      backgroundColor:'#f5f7fb !important',
                       fontWeight: 'bold',
                       fontSize: '1rem',
                     },
@@ -397,7 +401,7 @@ export default function UserDashboard() {
         </AccordionDetails>
       </Accordion>
       
-      <Accordion defaultExpanded>
+      <Accordion className="member-dashboard-section" defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
           <Typography variant="h6" gutterBottom>
             Actions Taken on My Profile
@@ -406,7 +410,7 @@ export default function UserDashboard() {
         <AccordionDetails>
           <Card>
           <CardContent>
-            <div style={{width: '100%' }}>
+            <div className="responsive-grid-wrap">
               <DataGrid
                     rows={rowsWithId}
                     columns={auditColumns}
@@ -420,7 +424,7 @@ export default function UserDashboard() {
                     slots={{ toolbar: GridToolbar }}
                     sx={{
                       '& .MuiDataGrid-columnHeader': {
-                        backgroundColor:'#f0f0f0 !important',
+                        backgroundColor:'#f5f7fb !important',
                         fontWeight: 'bold',
                         fontSize: '1rem',
                       },
