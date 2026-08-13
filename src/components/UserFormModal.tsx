@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Modal } from 'antd';
+import { Modal, Typography } from 'antd';
 import { Form, FormFeedback, FormGroup, Input, Label } from 'reactstrap';
 import type { TeamDTO, UserDTO } from '../types/dto';
 
@@ -67,7 +67,8 @@ export default function UserFormModal({
 
   return (
     <Modal
-      title={mode === 'add' ? 'Add New User' : `Edit User: ${initialValues.name}`}
+      className="polished-modal user-form-modal"
+      title={<div className="modal-title-block"><Typography.Title level={4}>{mode === 'add' ? 'Add user' : `Edit ${initialValues.name}`}</Typography.Title><Typography.Text type="secondary">{mode === 'add' ? 'Create a profile and assign its initial team.' : 'Update profile details and team assignment.'}</Typography.Text></div>}
       open={open}
       onCancel={() => {
         setFormValidation(initialValidation);
@@ -75,16 +76,17 @@ export default function UserFormModal({
         onClose();
       }}
       onOk={handleSubmit}
-      okText={mode === 'add' ? 'Create' : 'Save'}
+      okText={mode === 'add' ? 'Create user' : 'Save changes'}
+      cancelText="Cancel"
       okButtonProps={{ disabled: mode === 'add' ? !isFormValid() : !isEdited}}
     >
-      <Form>
+      <Form className="modal-form">
         <FormGroup>
-          <Label for={'name'}>User Name:</Label>
+          <Label for={'name'}>Full name</Label>
           <Input
             id="user-name"
             type="text"
-            placeholder="User Name"
+            placeholder="Enter full name"
             value={formValues.name || ''}
             onChange={(e) => {
               setFormValues({ ...formValues, name: e.target.value });
@@ -98,11 +100,11 @@ export default function UserFormModal({
         </FormGroup>
 
         <FormGroup>
-          <Label for={'email'}>Email ID:</Label>
+          <Label for={'email'}>Email address</Label>
           <Input
             id="email-id"
             type="text"
-            placeholder="Email ID"
+            placeholder="name@company.com"
             value={formValues.email || ''}
             onChange={(e) => {
               setFormValues({ ...formValues, email: e.target.value });
@@ -116,7 +118,7 @@ export default function UserFormModal({
         </FormGroup>
 
         <FormGroup>
-          <Label for={'empId'}>Employee ID:</Label>
+          <Label for={'empId'}>Employee ID</Label>
           <Input
             id="emp-id"
             type="text"
@@ -135,7 +137,7 @@ export default function UserFormModal({
         </FormGroup>
 
         <FormGroup>
-          <Label for={'team'}>Team:</Label>
+          <Label for={'team'}>Team</Label>
           <Input
             type="select"
             id="team-select"
@@ -164,7 +166,7 @@ export default function UserFormModal({
         </FormGroup>
 
         <FormGroup>
-          <Label for={'role'}>Role:</Label>
+          <Label for={'role'}>Role</Label>
           <Input
             id="role"
             type="text"

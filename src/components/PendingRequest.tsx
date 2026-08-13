@@ -1,4 +1,4 @@
-import { Button, TextField, useTheme } from "@mui/material";
+import { Box, Button, TextField, Typography as MuiTypography } from "@mui/material";
 import { DataGrid, GridToolbar, type GridColDef, type GridPaginationModel } from "@mui/x-data-grid";
 import {  Typography } from "antd";
 import { useEffect, useState } from "react";
@@ -10,8 +10,6 @@ import { toast } from 'react-toastify';
 const { Title } = Typography;
 
 export default function PendingRequest(){
-
-    const theme = useTheme();
     const [searchText, setSearchText] = useState('');
     const [pendingRequest, setPendingRequest] = useState<PendingRequestDTO[]>([]);
     const [isDialogOpen, setDialogOpen] = useState(false);
@@ -28,7 +26,7 @@ export default function PendingRequest(){
             )
           );
           setFilteredPendingRequest(filtered);
-    }, [searchText]);
+    }, [searchText, pendingRequest]);
     
     useEffect(() => {
         fetchPendingRequest();
@@ -38,7 +36,7 @@ export default function PendingRequest(){
         try{
             const res = await axios.get<PendingRequestDTO[]>('/v1/team-access-manager/team/pending-request');
             setPendingRequest(res.data || []);
-            setFilteredPendingRequest(res.data);
+            setFilteredPendingRequest(res.data || []);
 
         }catch{
             toast.error('Error fetching pending request. Please try again after sometime',
@@ -88,6 +86,8 @@ export default function PendingRequest(){
             filterable: true,
             flex: 1,
             minWidth: 150,
+            headerAlign: 'left',
+            align: 'left',
         },
         {
             field: 'featureName',
@@ -96,6 +96,8 @@ export default function PendingRequest(){
             filterable: true,
             flex: 1,
             minWidth: 150,
+            headerAlign: 'left',
+            align: 'left',
         },
         {
             field: 'requestedOn',
@@ -104,27 +106,31 @@ export default function PendingRequest(){
             filterable: true,
             flex: 1,
             minWidth: 150,
+            headerAlign: 'left',
+            align: 'left',
         },
         {
             field: "actions",
             headerName: "Actions",
             flex: 1,
-            minWidth: 250,
+                    minWidth: 180,
+            headerAlign: 'center',
+            align: 'center',
             renderCell: (params) => (
-                <>
+                <Box className="grid-cell-content grid-cell-content-center">
                 <Button
                     variant="contained"
-                    color="success"
+                    color="primary"
                     size="small"
-                    style={{ marginRight: 8 }}
+                    className="grid-action-button"
                     onClick={() => {
                         setCurrRequestData(params.row)
                         setDialogOpen(true)
                     }}
                 >
-                    Take Decision
+                    Review
                 </Button>
-                </>
+                </Box>
             ),
         },
     ]
@@ -137,18 +143,27 @@ export default function PendingRequest(){
     });
     
     return (
-        <div style={{ padding: 24 }}>
-            <Title level = {4}> Pending Request Dashboard </Title>
-            <div style={{ height: 600, width: '100%' }}>
+        <div className="pending-request-view">
+            <div className="pending-request-heading">
+              <div>
+                <Title level = {4} style={{ margin: 0 }}>Pending requests</Title>
+                <MuiTypography variant="body2" color="text.secondary">Review and decide on access requests waiting for approval.</MuiTypography>
+              </div>
+            </div>
+            <div className="pending-request-table app-surface">
+              <div className="pending-request-toolbar">
               <TextField
-                    label="Search users"
+                    label="Search requests"
                     variant="outlined"
                     size="small"
                     fullWidth
-                    sx={{ mb: 2 }}
                     value={searchText}
                     onChange={(e) => setSearchText(e.target.value)}
                   />
+                <MuiTypography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                  {filteredPendingRequest.length} {filteredPendingRequest.length === 1 ? 'request' : 'requests'} shown
+                </MuiTypography>
+              </div>
               <DataGrid
                     rows={filteredPendingRequest}
                     columns={columns}
@@ -161,19 +176,16 @@ export default function PendingRequest(){
                     slots={{ toolbar: GridToolbar }}
                     sx={{
                       '& .MuiDataGrid-columnHeader': {
-                        backgroundColor:'#f0f0f0 !important',
+                        backgroundColor:'#f5f7fb !important',
                         fontWeight: 'bold',
                         fontSize: '1rem',
                       },
+                      '& .MuiDataGrid-columnHeaders': {
+                        borderBottom: '1px solid #e1e6ee',
+                      },
                       '& .MuiDataGrid-cell': {
                         fontSize: '0.95rem',
-                        padding: '8px',
-                      },
-                      '& .MuiDataGrid-row': {
-                        borderBottom: `1px solid ${theme.palette.divider}`,
-                      },
-                      '& .MuiDataGrid-footerContainer': {
-                        mt: 2,
+                        padding: '10px 12px',
                       },
                     }}
                   />
@@ -183,12 +195,12 @@ export default function PendingRequest(){
                 open={isDialogOpen}
                 onClose={() => setDialogOpen(false)}
                 onApprove={(notes) => {
-                    console.log("Approved with notes:", notes);
+                    void notes;
                     handleDecision("APPROVED")
                     setDialogOpen(false);
                 }}
                 onReject={(notes) => {
-                    console.log("Rejected with notes:", notes);
+                    void notes;
                     handleDecision("REJECTED")
                     setDialogOpen(false);
                 }}

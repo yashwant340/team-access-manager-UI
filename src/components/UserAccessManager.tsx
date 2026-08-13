@@ -6,7 +6,7 @@ import type { TeamDTO, UserDTO } from '../types/dto';
 import AuditTrail from './AuditTrail';
 import UserFormModal from './UserFormModal';
 import { DataGrid, GridToolbar, type GridColDef , type GridPaginationModel } from '@mui/x-data-grid';
-import { IconButton, Tab, Tabs, TextField, Tooltip, useTheme } from '@mui/material';
+import { Box, IconButton, Tab, Tabs, TextField, Tooltip, Typography as MuiTypography } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import VisibilityIcon from '@mui/icons-material/Visibility';
@@ -44,7 +44,6 @@ export default function UserAccessManager() {
   const [addModalOpen, setAddModalOpen] = useState(false);
   const [searchText, setSearchText] = useState('');
   const [filteredUsers, setFilteredUsers] = useState<UserDTO[]>(users);
-  const theme = useTheme();
   const [selectedTab, setSelectedTab] = useState(0);
 
   useEffect(() => {
@@ -187,8 +186,9 @@ export default function UserAccessManager() {
 
   const handleDelete = (user: UserDTO) => {
     Modal.confirm({
+      className: 'polished-confirm-modal',
       title: `Delete user "${user.name}"?`,
-      content: 'Are you sure you want to delete this user?',
+      content: 'This removes the user and their direct access configuration. This action cannot be undone.',
       okText: 'Delete',
       okType: 'danger',
       cancelText: 'Cancel',
@@ -219,23 +219,17 @@ export default function UserAccessManager() {
 
   const openInfoModal = (selectedUser: UserDTO) => {
     Modal.info({
-      title: `User Information`,
+      className: 'polished-confirm-modal',
+      title: `User information`,
       content: (
-        <div style={{ lineHeight: '2' }}>
-          <p>
-            <strong>Email:</strong> {selectedUser.email}
-          </p>
-          <p>
-            <strong>Employee ID:</strong> {selectedUser.empId}
-          </p>
-          <p>
-            <strong>Role:</strong> {selectedUser.role}
-          </p>
-          <p>
-            <strong>Team:</strong> {selectedUser.teamName}
-          </p>
+        <div className="info-summary-card">
+          <div className="info-summary-row"><span>Email</span><strong>{selectedUser.email || '—'}</strong></div>
+          <div className="info-summary-row"><span>Employee ID</span><strong>{selectedUser.empId || '—'}</strong></div>
+          <div className="info-summary-row"><span>Role</span><strong>{selectedUser.role || '—'}</strong></div>
+          <div className="info-summary-row"><span>Team</span><strong>{selectedUser.teamName || '—'}</strong></div>
         </div>
       ),
+      okText: 'Done',
       onOk() {},
     });
   };
@@ -287,11 +281,13 @@ const columns: GridColDef[] = [
     sortable: false,
     filterable: false,
     width: 180,
+    headerAlign: 'center',
+    align: 'center',
     renderCell: (params) => (
-      <Button variant="text" onClick={() => openAccessModal(params.row)}>
+      <Box className="grid-cell-content grid-cell-content-center"><Button variant="outlined" className="grid-action-button" onClick={() => openAccessModal(params.row)}>
         <ManageAccountsIcon fontSize="small" style={{ marginRight: 4 }} />
         Manage
-      </Button>
+      </Button></Box>
     ),
   },
   {
@@ -300,11 +296,13 @@ const columns: GridColDef[] = [
     sortable: false,
     filterable: false,
     width: 150,
+    headerAlign: 'center',
+    align: 'center',
     renderCell: (params) => (
-      <Button variant="text" onClick={() => openAuditModal(params.row.id)}>
+      <Box className="grid-cell-content grid-cell-content-center"><Button variant="outlined" className="grid-action-button" onClick={() => openAuditModal(params.row.id)}>
         <HistoryIcon fontSize="small" style={{ marginRight: 4 }} />
         View
-      </Button>
+      </Button></Box>
     ),
   },
   {
@@ -313,8 +311,10 @@ const columns: GridColDef[] = [
     sortable: false,
     filterable: false,
     width: 150,
+    headerAlign: 'center',
+    align: 'center',
     renderCell: (params) => (
-      <>
+      <Box className="grid-action-buttons">
         <Tooltip title="View Details">
           <IconButton onClick={() => openInfoModal(params.row)}>
             <VisibilityIcon fontSize="small" />
@@ -330,7 +330,7 @@ const columns: GridColDef[] = [
             <DeleteIcon fontSize="small" />
           </IconButton>
         </Tooltip>
-      </>
+      </Box>
     ),
   },
 ];
@@ -352,22 +352,20 @@ const handleTabChange = (_event: any, newValue: SetStateAction<number>) => {
   };
 
   return (
-    <div style={{ padding: 24 }}>
-      <Title level={4}>User Access Manager</Title>
-      <div className='d-flex justify-content-end mb-3'>
+    <div className="user-access-manager">
+      <div className="user-access-heading">
+        <div>
+          <Title level={4} style={{ margin: 0 }}>User access</Title>
+          <MuiTypography variant="body2" color="text.secondary">Review people, permissions, and account activity in one place.</MuiTypography>
+        </div>
         <Button
         type="primary"
         onClick={() => setAddModalOpen(true)}
       >
-        Add New User
+          Add user
       </Button>
       </div>
       
-      <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2 }}>
-        <Tab label="Active Users" />
-        <Tab label="Inactive Users" />
-      </Tabs>
-
       <UserFormModal
         open={addModalOpen}
         onClose={() => setAddModalOpen(false)}
@@ -390,16 +388,24 @@ const handleTabChange = (_event: any, newValue: SetStateAction<number>) => {
         originalValues={editUser!}
       />
 
-<div style={{ height: 600, width: '100%' }}>
-  <TextField
+<div className="user-access-table-wrap app-surface">
+  <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2.5 }}>
+    <Tab label="Active users" />
+    <Tab label="Inactive users" />
+  </Tabs>
+  <Box className="user-access-toolbar">
+    <TextField
         label="Search users"
         variant="outlined"
         size="small"
-        fullWidth
-        sx={{ mb: 2 }}
+        sx={{ flex: 1, minWidth: 220 }}
         value={searchText}
         onChange={(e) => setSearchText(e.target.value)}
       />
+    <MuiTypography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+      {filteredUsers.length} {filteredUsers.length === 1 ? 'user' : 'users'} shown
+    </MuiTypography>
+  </Box>
   <DataGrid
         rows={filteredUsers}
         columns={baseColumns}
@@ -412,31 +418,29 @@ const handleTabChange = (_event: any, newValue: SetStateAction<number>) => {
         slots={{ toolbar: GridToolbar }}
         sx={{
           '& .MuiDataGrid-columnHeader': {
-            backgroundColor:'#f0f0f0 !important',
+            backgroundColor:'#f5f7fb !important',
             fontWeight: 'bold',
             fontSize: '1rem',
           },
           '& .MuiDataGrid-cell': {
             fontSize: '0.95rem',
-            padding: '8px',
-          },
-          '& .MuiDataGrid-row': {
-            borderBottom: `1px solid ${theme.palette.divider}`,
+            padding: '10px 12px',
           },
           '& .MuiDataGrid-footerContainer': {
-            mt: 2,
+            minHeight: 52,
           },
         }}
       />
 </div>
 
       <Modal
-        title={`Access for ${selectedUser?.name}`}
+        className="polished-modal permission-modal"
+        title={<div className="modal-title-block"><Title level={4}>User permissions</Title><Typography.Text type="secondary">{selectedUser?.name}</Typography.Text></div>}
         open={accessModalOpen}
         onCancel={closeAccessModal}
         footer={null}
         destroyOnClose
-        width={600}
+        width={680}
       >
         {selectedUser && (
           <UserFeatureAccess

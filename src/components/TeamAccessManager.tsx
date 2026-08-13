@@ -9,7 +9,7 @@ import { DataGrid, GridToolbar, type GridColDef, type GridPaginationModel } from
 import DeleteIcon from '@mui/icons-material/Delete';
 import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import {History as HistoryIcon} from '@mui/icons-material';
-import {  IconButton, Tab, Tabs, TextField, Tooltip, useTheme } from '@mui/material';
+import {  Avatar, Box, Chip, IconButton, Tab, Tabs, TextField, Tooltip, Typography as MuiTypography } from '@mui/material';
 import { useAuth } from '../providers/AuthProvider';
 import { toast } from 'react-toastify';
 
@@ -115,16 +115,17 @@ export default function TeamAccessManager() {
 
     const confirmDeleteTeam = (team: TeamDTO) => {
         Modal.confirm({
-          title: `You are about to inactivate the team "${team.name}".`,
+          className: 'polished-confirm-modal',
+          title: `Inactivate team "${team.name}"?`,
           content: (
             <div>
-              <p>This action will:</p>
-              <ul style={{ paddingLeft: 20 }}>
+              <p>This change will:</p>
+              <ul className="impact-list">
                 <li>Inactivate the team to preserve the team and its audit history</li>
                 <li>Switch all users in the team to override team access</li>
                 <li>Set their access to all features as <strong>“Not Granted”</strong> by default</li>
               </ul>
-              <p style={{ marginTop: 16 }}>Are you sure you want to continue?</p>
+              <p className="confirm-footnote">Review the impact before continuing.</p>
             </div>
           ),
           okText: 'Confirm and Inactivate',
@@ -218,20 +219,22 @@ export default function TeamAccessManager() {
       headerName: 'Team Name',
       sortable: true,
       filterable: true,
-      flex: 1,
-      minWidth: 150,
+      flex: 1.25,
+      minWidth: 180,
     },
     {
       field: 'userList',
       headerName: 'Members',
       sortable: false,
       filterable: false,
-      flex: 1,
-      minWidth: 150,
+      flex: 0.75,
+      minWidth: 120,
+      headerAlign: 'center',
+      align: 'center',
       renderCell: (params) => (
-        <Button type="link" onClick={() => openUserListModal(params.row)}>
+        <Box className="grid-cell-content grid-cell-link grid-cell-content-center"><Button className="member-count-button" type="link" onClick={() => openUserListModal(params.row)}>
             {params.row.userList?.length ?? 0}
-        </Button>   
+        </Button></Box>
         ),
     },
     {
@@ -239,12 +242,15 @@ export default function TeamAccessManager() {
       headerName: 'Permissions',
       sortable: false,
       filterable: false,
-      width: 180,
+      flex: 1,
+      minWidth: 160,
+      headerAlign: 'center',
+      align: 'center',
       renderCell: (params) => (
-        <Button variant="text" onClick={() => openPermissionsModal(params.row)}>
+        <Box className="grid-cell-content grid-cell-content-center"><Button variant="outlined" color="primary" size="small" className="grid-action-button" onClick={() => openPermissionsModal(params.row)}>
           <ManageAccountsIcon fontSize="small" style={{ marginRight: 4 }} />
           Manage
-        </Button>
+        </Button></Box>
       ),
       
     },
@@ -253,12 +259,15 @@ export default function TeamAccessManager() {
       headerName: 'Audit Trail',
       sortable: false,
       filterable: false,
-      width: 150,
+      flex: 0.8,
+      minWidth: 140,
+      headerAlign: 'center',
+      align: 'center',
       renderCell: (params) => (
-        <Button variant="text" onClick={() => openAuditModal(params.row.id)}>
+        <Box className="grid-cell-content grid-cell-content-center"><Button variant="outlined" color="primary" size="small" className="grid-action-button" onClick={() => openAuditModal(params.row.id)}>
           <HistoryIcon fontSize="small" style={{ marginRight: 4 }} />
           View
-        </Button>
+        </Button></Box>
       ),
     },
     {
@@ -266,17 +275,20 @@ export default function TeamAccessManager() {
             headerName: 'Actions',
             sortable: false,
             filterable: false,
-            width: 150,
+            flex: 0.7,
+            minWidth: 120,
+            headerAlign: 'center',
+            align: 'center',
             renderCell: (params) => {
               const canDelete = user?.platformRole === 'PLATFORM_ADMIN'
               return(
-              <>
+              <Box className="grid-action-buttons grid-cell-content-center">
                 <Tooltip title="Delete">
                   <IconButton onClick={() => confirmDeleteTeam(params.row)} color="error" disabled = {!canDelete}>
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 </Tooltip>
-              </>
+              </Box>
               )
             },
     }
@@ -285,7 +297,7 @@ export default function TeamAccessManager() {
 
   const baseColumns = useMemo(() => {
     if (selectedTab === 1) {
-      return columns.filter((col) => col.field !== 'permissions' && col.field !== 'actions' && col.field !== 'userList');
+      return columns.filter((col) => col.field !== 'permissions' && col.field !== 'actions');
     }
     return columns
   }, [selectedTab]);
@@ -295,48 +307,51 @@ export default function TeamAccessManager() {
     page: 0,
   });
 
-  const theme = useTheme();
-
   const handleTabChange = (_event: any, newValue: SetStateAction<number>) => {
       setSelectedTab(newValue);
     };
     
   return (
-    <div style={{ padding: 24 }}>
-      <Title level={4}>Team Access Control</Title>
-      <div className='d-flex justify-content-end mb-3'>
+    <div className="team-access-manager">
+      <div className="team-access-heading">
+        <div>
+          <Title level={4} style={{ margin: 0 }}>Team access</Title>
+          <MuiTypography variant="body2" color="text.secondary">Organize teams, members, permissions, and audit history.</MuiTypography>
+        </div>
         {user?.platformRole === 'PLATFORM_ADMIN' && <Button type="primary" onClick={() => setAddModalOpen(true)}>
           Add New Team
         </Button>}
       </div>
 
-      <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2 }}>
-        <Tab label="Active Teams" />
-        <Tab label="Inactive Teams" />
-      </Tabs>
+      <div className="team-access-table app-surface">
+        <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2.5 }}>
+          <Tab label="Active Teams" />
+          <Tab label="Inactive Teams" />
+        </Tabs>
 
         <Modal
-            title="Add New Team"
+            className="polished-modal"
+            title={<div className="modal-title-block"><Title level={4}>Add team</Title><Typography.Text type="secondary">Create a team and choose its starting permissions.</Typography.Text></div>}
             open={addModalOpen}
             onCancel={() => setAddModalOpen(false)}
             onOk={handleAddTeam}
             okText="Create Team"
         >
-            <div style={{ marginBottom: 12 }}>
-                <label>Team Name:</label>
+            <div className="modal-field">
+                <label>Team name</label>
                 <input
-                style={{ width: '100%', padding: 8, marginTop: 4 }}
+                className="modal-text-input"
                 value={newTeamName}
                 onChange={(e) => setNewTeamName(e.target.value)}
                 placeholder="Enter team name"
                 />
             </div>
 
-            <div>
-                <label>Select Feature Permissions:</label>
-                <div style={{ maxHeight: 200, overflowY: 'auto', padding: 8 }}>
+            <div className="modal-field">
+                <label>Feature permissions</label>
+                <div className="feature-check-list">
                     {features.map((feature) => (
-                    <div key={feature.id}>
+                    <div className="feature-check-row" key={feature.id}>
                         <input
                         type="checkbox"
                         id={`feature-${feature.id}`}
@@ -359,15 +374,20 @@ export default function TeamAccessManager() {
 
         </Modal>
 
-        <TextField
-                label="Search users"
-                variant="outlined"
-                size="small"
-                fullWidth
-                sx={{ mb: 2 }}
-                value={searchText}
-                onChange={(e) => setSearchText(e.target.value)}
-              />
+        <Box className="team-access-toolbar">
+          <TextField
+                  label="Search teams"
+                  variant="outlined"
+                  size="small"
+                  fullWidth
+                  sx={{ flex: 1, minWidth: 220 }}
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                />
+          <MuiTypography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+            {filteredTeams.length} {filteredTeams.length === 1 ? 'team' : 'teams'} shown
+          </MuiTypography>
+        </Box>
         <DataGrid
                 rows={filteredTeams}
                 columns={baseColumns}
@@ -380,52 +400,54 @@ export default function TeamAccessManager() {
                 slots={{ toolbar: GridToolbar }}
                 sx={{
                   '& .MuiDataGrid-columnHeader': {
-                    backgroundColor:'#f0f0f0 !important',
+                    backgroundColor:'#f5f7fb !important',
                     fontWeight: 'bold',
                     fontSize: '1rem',
                   },
+                  '& .MuiDataGrid-columnHeaders': {
+                    borderBottom: '1px solid #e1e6ee',
+                  },
                   '& .MuiDataGrid-cell': {
                     fontSize: '0.95rem',
-                    padding: '8px',
-                  },
-                  '& .MuiDataGrid-row': {
-                    borderBottom: `1px solid ${theme.palette.divider}`,
-                  },
-                  '& .MuiDataGrid-footerContainer': {
-                    mt: 2,
+                    padding: '10px 12px',
                   },
                 }}
               />
+      </div>
       <Modal
-        title={`Users in ${selectedTeamName}`}
+        title={<div><MuiTypography variant="h6" sx={{ fontWeight: 750 }}>Team members</MuiTypography><MuiTypography variant="body2" color="text.secondary">{selectedTeamName} · {selectedUsers.length} member{selectedUsers.length === 1 ? '' : 's'}</MuiTypography></div>}
         open={userModalOpen}
         onCancel={() => setUserModalOpen(false)}
         footer={null}
       >
-        <ul>
-          {selectedUsers.map((user) => (
-            <li key={user.id}>
-              {user.name} ({user.email})
-            </li>
-          ))}
-        </ul>
-        <p style={{ marginTop: 16, fontStyle: 'italic', color: '#888' }}>
-          To view or edit individual user access, please navigate to the <strong>User Access View</strong>.
-        </p>
+        {selectedUsers.length > 0 ? (
+          <Box className="member-list">
+            {selectedUsers.map((member) => (
+              <Box className="member-row" key={member.id}>
+                <Avatar sx={{ width: 36, height: 36, bgcolor: '#e2e7ff', color: '#3543a6', fontWeight: 750 }}>{member.name?.charAt(0).toUpperCase()}</Avatar>
+                <Box sx={{ flex: 1, minWidth: 0 }}>
+                  <MuiTypography sx={{ fontWeight: 700 }} noWrap>{member.name}</MuiTypography>
+                  <MuiTypography variant="body2" color="text.secondary" noWrap>{member.email}</MuiTypography>
+                </Box>
+                {member.role && <Chip label={member.role} size="small" variant="outlined" />}
+              </Box>
+            ))}
+          </Box>
+        ) : (
+          <MuiTypography color="text.secondary" sx={{ py: 3, textAlign: 'center' }}>No members are currently assigned to this team.</MuiTypography>
+        )}
+        <MuiTypography variant="body2" color="text.secondary" sx={{ mt: 2 }}>Manage individual access from the User Access tab.</MuiTypography>
       </Modal>
 
       <Modal
-        title={`Permissions for ${selectedTeam?.name}`}
+        className="polished-modal permission-modal"
+        title={<div className="modal-title-block"><Title level={4}>Permissions</Title><Typography.Text type="secondary">{selectedTeam?.name}</Typography.Text></div>}
         open={isModalOpen}
         onCancel={closeModal}
         footer={null}
         width={700}
       >
         {selectedTeam && <TeamFeatureAccess teamId={selectedTeam.id} onCancel={closeModal} />}
-      </Modal>
-
-      <Modal>
-
       </Modal>
 
         {auditModalOpen && (

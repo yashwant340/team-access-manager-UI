@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from '../api/axiosInstance';
-import { TextField, Button, Box, Typography, CircularProgress, Paper } from '@mui/material';
+import { TextField, Button, Box, Typography, CircularProgress, Paper, Stack, InputAdornment } from '@mui/material';
+import PersonOutlineRoundedIcon from '@mui/icons-material/PersonOutlineRounded';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 import { useAuth } from '../providers/AuthProvider';
 import { getDashboardRoute } from '../utils/RoleUtils';
 import RequestAccessModal from './RequestAccessModal';
@@ -60,22 +62,22 @@ const LoginPage: React.FC = () => {
   };
 
   return (
-    <Box display="flex" flexDirection="column" maxWidth={400} margin="auto" mt={10} gap={2}>
-      <Paper sx={{ p: 4, maxWidth: 400, width: '100%' }}>
-        <Typography variant="h5" gutterBottom>Team Access Manager Login </Typography>
-        <TextField style = {{padding: 8}} label="Username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" />
-        <TextField style = {{padding: 8}} label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" />
-
-          {error && <Typography color="error">{error}</Typography>}
-          <div style={{padding : 10}}>
-            <Button type="submit" variant="contained" disabled={localLoading} onClick={handleLogin}>
-              {localLoading ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Login'}
-            </Button>
-          </div>
-          
-        <Box display="flex" justifyContent="space-between" mt={2}>
-          <Button size="small" onClick={handleForgotPasswordOpen}>Forgot Password?</Button>
-          <Button size="small" onClick={handleRequestAccessOpen}>Request Access</Button>
+    <Box className="page-shell" sx={{ display: 'grid', placeItems: 'center', px: 2, py: 5 }}>
+      <Paper className="app-surface" elevation={0} sx={{ width: 'min(460px, 100%)', p: { xs: 3, sm: 5 } }}>
+        <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: '.14em' }}>TEAM ACCESS MANAGER</Typography>
+        <Typography variant="h4" sx={{ mt: 1, mb: 1 }}>Welcome back</Typography>
+        <Typography color="text.secondary" sx={{ mb: 3 }}>Sign in to manage access requests and workspace permissions.</Typography>
+        <Stack spacing={2} component="form" onSubmit={handleLogin}>
+          <TextField label="Username" value={username} onChange={(e) => setUsername(e.target.value)} autoComplete="username" fullWidth InputProps={{ startAdornment: <InputAdornment position="start"><PersonOutlineRoundedIcon color="action" /></InputAdornment> }} />
+          <TextField label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" fullWidth InputProps={{ startAdornment: <InputAdornment position="start"><LockOutlinedIcon color="action" /></InputAdornment> }} />
+          {error && <Typography color="error" variant="body2">{error}</Typography>}
+          <Button type="submit" variant="contained" size="large" fullWidth disabled={localLoading}>
+            {localLoading ? <CircularProgress size={20} sx={{ color: 'white' }} /> : 'Sign in'}
+          </Button>
+        </Stack>
+        <Box className="auth-links" display="flex" justifyContent="space-between" mt={2}>
+          <Button size="small" onClick={handleForgotPasswordOpen}>Forgot password?</Button>
+          <Button size="small" onClick={handleRequestAccessOpen}>Request access</Button>
         </Box>
 
         { requesAccessModalOpen && <RequestAccessModal open = {requesAccessModalOpen} onClose={closeRequestAccessModal} />}

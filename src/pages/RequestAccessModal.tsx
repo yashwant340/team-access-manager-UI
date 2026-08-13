@@ -47,10 +47,10 @@ const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ open, onClose }
   };
 
   return (
-    <Dialog open={open} onClose={onClose} fullWidth maxWidth="sm">
-      <DialogTitle>Request Access</DialogTitle>
-      <DialogContent>
-        <Typography variant="body2" mb={2}>
+    <Dialog className="polished-dialog" open={open} onClose={onClose} fullWidth maxWidth="sm">
+      <DialogTitle><Typography variant="h6" fontWeight={750}>Request access</Typography><Typography variant="body2" color="text.secondary">Send your details to the workspace administrator.</Typography></DialogTitle>
+      <DialogContent dividers className="dialog-form">
+        <Typography variant="body2" color="text.secondary" mb={1}>
           Fill in your details to request access. An admin will review and approve your request.
         </Typography>
         <TextField
@@ -97,10 +97,10 @@ const RequestAccessModal: React.FC<RequestAccessModalProps> = ({ open, onClose }
           onChange={handleChange}
         />
       </DialogContent>
-      <DialogActions>
+      <DialogActions className="dialog-actions">
         <Button onClick={onClose} disabled={loading}>Cancel</Button>
         <Button variant="contained" onClick={handleSubmit} disabled={loading}>
-          {loading ? "Submitting..." : "Submit"}
+          {loading ? "Submitting…" : "Submit request"}
         </Button>
       </DialogActions>
     </Dialog>

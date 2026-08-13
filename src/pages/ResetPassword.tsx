@@ -1,6 +1,6 @@
 import { useState } from "react";
 import axios from "../api/axiosInstance";
-import { Box, Button, CircularProgress, TextField, Typography } from "@mui/material";
+import { Box, Button, CircularProgress, TextField, Typography, Paper } from "@mui/material";
 import { toast } from 'react-toastify';
 import { useNavigate } from "react-router-dom";
 
@@ -81,12 +81,15 @@ const ResetPassword = () =>{
   };
 
   return (
-    <Box sx={{ maxWidth: 400, mx: "auto", mt: 8, p: 4, boxShadow: 3, borderRadius: 2 }}>
+    <Box className="page-shell" sx={{ minHeight: '100vh', display: 'grid', placeItems: 'center', px: 2, py: 5 }}>
+    <Paper className="app-surface" elevation={0} sx={{ maxWidth: 440, width: '100%', p: { xs: 3, sm: 5 } }}>
       
-    <div style={{ maxWidth: 400, margin: "auto" }}>
+    <div className="recovery-form">
+      <Typography variant="overline" sx={{ color: 'primary.main', fontWeight: 800, letterSpacing: '.14em' }}>ACCOUNT RECOVERY</Typography>
       {step === 1 && (
         <>
-        <Typography variant="h5" mb={2}>Forgot Password</Typography>
+        <Typography variant="h5" mb={1} mt={1}>Forgot Password</Typography>
+        <Typography color="text.secondary" mb={3}>Enter your username to receive a verification code.</Typography>
         <TextField
             label="Username"
             fullWidth
@@ -94,7 +97,7 @@ const ResetPassword = () =>{
             onChange={(e) => setUsername(e.target.value)}
             sx={{ mb: 2 }}
         />
-        <Button color= "inherit" variant="contained" fullWidth disabled = {username.length === 0} onClick={handleSendOtp}>{loading ? <CircularProgress size={24} /> : "Send OTP"}</Button>
+        <Button color="primary" variant="contained" fullWidth disabled = {username.length === 0} onClick={handleSendOtp}>{loading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : "Send OTP"}</Button>
         </>
       )}
 
@@ -108,7 +111,7 @@ const ResetPassword = () =>{
                 onChange={(e) => setOtp(e.target.value)}
                 sx={{ mb: 2 }}
             />
-            <Button color= "inherit" variant="contained" fullWidth disabled = {otp.length === 0} onClick={handleVerifyOtp}>{loading ? <CircularProgress size={24} /> : "Verify OTP"}</Button>
+            <Button color="primary" variant="contained" fullWidth disabled = {otp.length === 0} onClick={handleVerifyOtp}>{loading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : "Verify OTP"}</Button>
         </>
       )}
 
@@ -129,11 +132,12 @@ const ResetPassword = () =>{
                 onChange={(e) => setConfirmPassword(e.target.value)}
                 sx={{ mb: 2 }}
             />
-            <Button color= "inherit" variant="contained" fullWidth disabled = {confirmPassword !== newPassword} onClick={handleResetPassword}>{loading ? <CircularProgress size={24} /> : "Reset Password"}</Button>
+            <Button color="primary" variant="contained" fullWidth disabled = {confirmPassword !== newPassword} onClick={handleResetPassword}>{loading ? <CircularProgress size={24} sx={{ color: '#fff' }} /> : "Reset Password"}</Button>
 
         </>
       )}
     </div>
+    </Paper>
     </Box>
     
   );
