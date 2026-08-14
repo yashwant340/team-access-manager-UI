@@ -59,7 +59,7 @@ export default function PendingRequest(){
         if (!currRequesData) return;
         try {
             const requestBody = {
-                ...currRequesData,
+                id: currRequesData.id,
                 requestDecision: decision
             };
             await axios.post('/v1/team-access-manager/team/request-decision', requestBody);
@@ -200,13 +200,11 @@ export default function PendingRequest(){
             <AdminApprovalDialog
                 open={isDialogOpen}
                 onClose={() => setDialogOpen(false)}
-                onApprove={(notes) => {
-                    void notes;
+                onApprove={() => {
                     handleDecision("APPROVED")
                     setDialogOpen(false);
                 }}
-                onReject={(notes) => {
-                    void notes;
+                onReject={() => {
                     handleDecision("REJECTED")
                     setDialogOpen(false);
                 }}
