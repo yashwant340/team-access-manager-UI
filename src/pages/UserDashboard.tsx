@@ -6,6 +6,7 @@ import { useAuth } from "../providers/AuthProvider";
 import {  type UserDTO, type UserDashboardAccessDataDTO } from "../types/dto";
 import { DataGrid, GridToolbar, type GridColDef, type GridPaginationModel  } from "@mui/x-data-grid";
 import { toast } from 'react-toastify';
+import { notifyAccessDataChanged } from '../utils/accessDataRefresh';
 import {
   Person as PersonIcon,
   Apartment as ApartmentIcon,
@@ -124,7 +125,8 @@ export default function UserDashboard() {
       await axios.post("/v1/team-access-manager/user/access-request", 
         payload
       );
-      fetchDashboardData();
+      await Promise.all([fetchDashboardData(), fetchAuditData()]);
+      notifyAccessDataChanged();
       if(!isCancel){
         toast.success('Request submitted successfully',
           {

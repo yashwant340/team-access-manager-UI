@@ -6,6 +6,7 @@ import type { PendingRequestDTO } from "../types/dto";
 import axios from '../api/axiosInstance';
 import AdminApprovalDialog from "./AdminApprovalDialog";
 import { toast } from 'react-toastify';
+import { notifyAccessDataChanged, subscribeToAccessDataChanges } from '../utils/accessDataRefresh';
 
 const { Title } = Typography;
 
@@ -29,7 +30,11 @@ export default function PendingRequest(){
     }, [searchText, pendingRequest]);
     
     useEffect(() => {
-        fetchPendingRequest();
+        const refreshRequests = () => {
+          void fetchPendingRequest();
+        };
+        refreshRequests();
+        return subscribeToAccessDataChanges(refreshRequests);
     },[]);
 
     const fetchPendingRequest = async () => {
@@ -65,7 +70,8 @@ export default function PendingRequest(){
                     hideProgressBar: false
                 }
             )
-            fetchPendingRequest(); 
+            void fetchPendingRequest();
+            notifyAccessDataChanged();
             setDialogOpen(false);
         } catch {
             toast.error(`Failed to ${decision.toLowerCase()} request`,

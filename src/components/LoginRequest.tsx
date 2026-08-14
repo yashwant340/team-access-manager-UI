@@ -1,13 +1,14 @@
 import { DataGrid, GridToolbar, type GridColDef, type GridPaginationModel } from "@mui/x-data-grid";
 import {  type LoginRequestDTO, type TeamDTO } from "../types/dto";
-import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Stack, Typography, useTheme } from "@mui/material";
-import {  useEffect, useState } from "react";
+import { Box, Button, Dialog, DialogActions, DialogContent, DialogTitle, Divider, Stack, TextField, Typography } from "@mui/material";
+import {  useEffect, useMemo, useState } from "react";
 import { Input } from "reactstrap";
 import {CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon
 } from "@mui/icons-material";
 import axios from '../api/axiosInstance';
 import { toast } from 'react-toastify';
+import { notifyAccessDataChanged, subscribeToAccessDataChanges } from '../utils/accessDataRefresh';
 
 
 
@@ -17,14 +18,24 @@ export default function LoginRequest(){
     const [isDialogOpen, setDialogOpen] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState<TeamDTO|null>();
     const [teams, setTeams] = useState<TeamDTO[]>();
-    const [loginRequestData, setLoginRequestData] = useState<LoginRequestDTO[]>();
+    const [loginRequestData, setLoginRequestData] = useState<LoginRequestDTO[]>([]);
+    const [searchText, setSearchText] = useState('');
 
 
-    const theme = useTheme();
     useEffect(()=>{
-        fetchLoginRequests();
-        fetchTeams();
+        const refreshLists = () => {
+          void fetchLoginRequests();
+          void fetchTeams();
+        };
+        refreshLists();
+        return subscribeToAccessDataChanges(refreshLists);
     },[]);
+
+    useEffect(() => {
+      if (isDialogOpen) {
+        void fetchTeams();
+      }
+    }, [isDialogOpen]);
 
     const handleApprove =async() => {
         try{
@@ -34,7 +45,8 @@ export default function LoginRequest(){
                 teamId: selectedTeam?.id
             }
         });
-        fetchLoginRequests();
+        void fetchLoginRequests();
+        notifyAccessDataChanged();
         toast.success('Login request successfully approved.', {
             position: "top-right",
             autoClose: 5000,
@@ -83,6 +95,14 @@ export default function LoginRequest(){
         setDialogOpen(false);
         setSelectedTeam(undefined);
     }
+    const filteredLoginRequests = useMemo(() => {
+      const query = searchText.trim().toLowerCase();
+      if (!query) return loginRequestData;
+      return loginRequestData.filter((request) =>
+        Object.values(request).some((value) => String(value).toLowerCase().includes(query))
+      );
+    }, [loginRequestData, searchText]);
+
     const columns: GridColDef[] = [
         {
             field:'name',
@@ -100,28 +120,28 @@ export default function LoginRequest(){
             field:'createdDate',
             headerName:'Requested On',
             flex:1,
-            minWidth: 50,
+            minWidth: 150,
         },
         {
             field: "actions",
             headerName: "Actions",
-            flex: 1,
-            minWidth: 250,
+            width: 180,
+            headerAlign: 'center',
+            align: 'center',
             renderCell: (params) => (
-                <>
+                <Box className="grid-cell-content grid-cell-content-center">
                 <Button
-                    variant="contained"
-                    color="success"
+                    variant="outlined"
                     size="small"
-                    style={{ marginRight: 8 }}
+                    className="grid-action-button"
                     onClick={() => {
                         setCurrRequestData(params.row)
                         setDialogOpen(true)
                     }}
                 >
-                    Take Decision
+                    Review
                 </Button>
-                </>
+                </Box>
             ),
         },
     ]
@@ -137,13 +157,25 @@ export default function LoginRequest(){
         <div className="login-request-view">
             <div className="login-request-heading">
               <div>
-                <Typography variant="h5" fontWeight={750}>Login requests</Typography>
+                <Typography variant="h6" fontWeight={750}>Login requests</Typography>
                 <Typography variant="body2" color="text.secondary">Review new account requests and assign each person to a team.</Typography>
               </div>
             </div>
             <div className="login-request-table app-surface">
+              <Box className="login-request-toolbar">
+                <TextField
+                  label="Search requests"
+                  size="small"
+                  value={searchText}
+                  onChange={(event) => setSearchText(event.target.value)}
+                  sx={{ flex: 1, minWidth: 220 }}
+                />
+                <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                  {filteredLoginRequests.length} {filteredLoginRequests.length === 1 ? 'request' : 'requests'} shown
+                </Typography>
+              </Box>
               <DataGrid
-                    rows={loginRequestData}
+                    rows={filteredLoginRequests}
                     columns={columns}
                     getRowId={(row) => row.id}
                     paginationModel={paginationModel}
@@ -153,20 +185,8 @@ export default function LoginRequest(){
                     autoHeight
                     slots={{ toolbar: GridToolbar }}
                     sx={{
-                      '& .MuiDataGrid-columnHeader': {
-                        backgroundColor:'#f0f0f0 !important',
-                        fontWeight: 'bold',
-                        fontSize: '1rem',
-                      },
                       '& .MuiDataGrid-cell': {
-                        fontSize: '0.95rem',
-                        padding: '8px',
-                      },
-                      '& .MuiDataGrid-row': {
-                        borderBottom: `1px solid ${theme.palette.divider}`,
-                      },
-                      '& .MuiDataGrid-footerContainer': {
-                        mt: 2,
+                        padding: '10px 12px',
                       },
                   }}
                   />

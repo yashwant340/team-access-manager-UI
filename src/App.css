@@ -160,6 +160,7 @@ body { background: #f5f7fb; }
 .login-request-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin-bottom: 20px; }
 .login-request-heading .MuiTypography-root { margin-bottom: 3px; }
 .login-request-table { width: 100%; padding: 18px 18px 10px; }
+.login-request-toolbar { display: flex; align-items: center; gap: 14px; width: 100%; margin-bottom: 14px; }
 .login-request-table .MuiDataGrid-root { width: 100%; }
 .grid-cell-content-center { justify-content: center; }
 .grid-action-buttons { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; gap: 2px; }
@@ -211,9 +212,9 @@ body { background: #f5f7fb; }
   .workspace-tabs > .ant-tabs-nav { margin: 0 8px 12px !important; }
   .workspace-tabs .ant-tabs-tab { padding: 10px 12px !important; }
   .user-access-manager, .team-access-manager, .pending-request-view, .login-request-view { padding: 4px; }
-  .user-access-heading, .user-access-toolbar, .team-access-heading, .team-access-toolbar, .pending-request-heading, .pending-request-toolbar, .login-request-heading { flex-direction: column; align-items: stretch; }
-  .user-access-toolbar .MuiTypography-root, .team-access-toolbar .MuiTypography-root, .pending-request-toolbar .MuiTypography-root { align-self: flex-end; }
-  .user-access-toolbar .MuiTextField-root, .team-access-toolbar .MuiTextField-root, .pending-request-toolbar .MuiTextField-root { min-width: 0 !important; width: 100%; }
+  .user-access-heading, .user-access-toolbar, .team-access-heading, .team-access-toolbar, .pending-request-heading, .pending-request-toolbar, .login-request-heading, .login-request-toolbar { flex-direction: column; align-items: stretch; }
+  .user-access-toolbar .MuiTypography-root, .team-access-toolbar .MuiTypography-root, .pending-request-toolbar .MuiTypography-root, .login-request-toolbar .MuiTypography-root { align-self: flex-end; }
+  .user-access-toolbar .MuiTextField-root, .team-access-toolbar .MuiTextField-root, .pending-request-toolbar .MuiTextField-root, .login-request-toolbar .MuiTextField-root { min-width: 0 !important; width: 100%; }
   .user-access-heading .ant-btn, .team-access-heading .ant-btn { width: 100%; }
   .user-access-table-wrap, .team-access-table, .pending-request-table, .login-request-table { padding: 12px 10px 8px; border-radius: 12px; }
   .user-access-manager .MuiTabs-scroller, .team-access-manager .MuiTabs-scroller, .member-dashboard .MuiTabs-scroller { overflow-x: auto !important; }

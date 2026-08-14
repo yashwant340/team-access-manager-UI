@@ -3,6 +3,7 @@ import { Table, Switch, Button, Spin, Typography, Tag, Space, Empty } from 'antd
 import axios from '../api/axiosInstance';
 import type { TeamAccessControlDTO } from '../types/dto';
 import { toast } from 'react-toastify';
+import { notifyAccessDataChanged } from '../utils/accessDataRefresh';
 
 
 interface Props {
@@ -86,6 +87,7 @@ export default function TeamFeatureAccess({ teamId, onCancel}: Props) {
             });
             return nextMap;
             });
+            notifyAccessDataChanged();
         })
       .catch(() => toast.error('Failed to save updated accesses. Please try again after sometime',
           {
