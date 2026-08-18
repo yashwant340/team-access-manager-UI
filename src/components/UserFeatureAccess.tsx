@@ -3,6 +3,7 @@ import { Table, Button, Typography, Segmented, Tag, Empty } from 'antd';
 import axios from '../api/axiosInstance';
 import type { AccessControlDTO, UserAccessControlDTO, TeamAccessControlDTO } from '../types/dto';
 import { toast } from 'react-toastify';
+import { notifyAccessDataChanged } from '../utils/accessDataRefresh';
 
 interface Props {
   userId: number;
@@ -144,6 +145,7 @@ export default function UserFeatureAccess({ userId, initialOverride, onClose, on
       setOriginalMode(accessMode);
       setOriginalFeatureMap({ ...featureMap });
       onAccessModeChange(userId, accessMode);
+      notifyAccessDataChanged();
       onClose();
     })
     .catch(() => toast.error('Failed to update user accesses. Please try again after sometime.',

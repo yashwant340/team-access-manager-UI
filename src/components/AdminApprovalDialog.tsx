@@ -8,7 +8,6 @@ import {
   Divider,
   Stack,
   Button,
-  TextField,
   Box
 } from "@mui/material";
 import {
@@ -24,8 +23,8 @@ import type { PendingRequestDTO } from "../types/dto";
 interface ApprovalDialogProps {
   open: boolean;
   onClose: () => void;
-  onApprove: (notes: string) => void;
-  onReject: (notes: string) => void;
+  onApprove: () => void;
+  onReject: () => void;
   requestData: PendingRequestDTO | undefined;
 }
 
@@ -36,21 +35,21 @@ export default function AdminApprovalDialog({
   onReject,
   requestData
 }: ApprovalDialogProps) {
-  const [notes, setNotes] = useState("");
-
   const [impactPreview, setImpactPreview] = useState<string[]>([]);
 
   useEffect(() => {
+    const isGrant = requestData?.requestType === 'GRANT';
+    const targetAccess = isGrant ? 'granted' : 'revoked';
     if(requestData?.accessMode === 'INHERIT_TEAM_ACCESS'){
         setImpactPreview([
             "Mode will switch from Inherit → Override",
-            `Access to '${requestData?.featureName}' will be granted`,
+            `Access to '${requestData?.featureName}' will be ${targetAccess}`,
             "Other inherited accesses will be transferred to override mode"
         ])
     }
     else{
         setImpactPreview([
-            `Access to '${requestData?.featureName}' will be granted`,
+            `Access to '${requestData?.featureName}' will be ${targetAccess}`,
             "Other accesses will remain the same"
         ])
     }
@@ -98,17 +97,15 @@ export default function AdminApprovalDialog({
         </Typography>
         <Stack spacing={0.75} className="access-snapshot">
           <Box><Typography variant="caption" color="text.secondary">Access mode</Typography><Typography fontWeight={650}>{requestData?.accessMode === 'INHERIT_TEAM_ACCESS' ? 'Inherited from team' : 'Custom override'}</Typography></Box>
-          <Box><Typography variant="caption" color="text.secondary">Current feature access</Typography><Typography fontWeight={650}>Not granted</Typography></Box>
+          <Box><Typography variant="caption" color="text.secondary">Current feature access</Typography><Typography fontWeight={650}>{requestData?.currentFeatureHasAccess === null || requestData?.currentFeatureHasAccess === undefined ? 'Not configured' : requestData.currentFeatureHasAccess ? 'Granted' : 'Not granted'}</Typography></Box>
           
           <Box><Typography variant="caption" color="text.secondary">Other features</Typography><Typography>
-            {requestData? requestData.otherFeatures.userAccessControlDTOS !== null ? 
-              requestData.otherFeatures.userAccessControlDTOS.map(
+            {requestData ? (requestData.otherFeatures.userAccessControlDTOS ?? requestData.otherFeatures.teamAccessControlDTOS ?? [])
+              .filter((f) => f.featureId !== requestData.featureId)
+              .map(
                 (f) => `${f.hasAccess ? "✔" : "❌"} ${f.featureName}`
               )
-              .join("   ") : requestData.otherFeatures.teamAccessControlDTOS.map(
-                (f) => `${f.hasAccess ? "✔" : "❌"} ${f.featureName}`
-              )
-              .join("   ") : "N/A"}
+              .join("   ") || "No other feature permissions configured" : "N/A"}
           </Typography></Box>
         </Stack>
 
@@ -128,15 +125,6 @@ export default function AdminApprovalDialog({
 
         <Divider sx={{ my: 2 }} />
 
-        {/* Notes */}
-        <TextField
-          label="Notes (optional)"
-          fullWidth
-          multiline
-          rows={3}
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
       </DialogContent>
 
       <DialogActions className="dialog-actions decision-actions">
@@ -144,7 +132,7 @@ export default function AdminApprovalDialog({
           variant="contained"
           color="error"
           startIcon={<CancelIcon />}
-          onClick={() => onReject(notes)}
+          onClick={onReject}
         >
           Reject
         </Button>
@@ -158,7 +146,7 @@ export default function AdminApprovalDialog({
           variant="contained"
           color="success"
           startIcon={<CheckCircleIcon />}
-          onClick={() => onApprove(notes)}
+          onClick={onApprove}
         >
           Approve
         </Button>

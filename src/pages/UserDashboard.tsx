@@ -1,11 +1,12 @@
 import { useState, useEffect, type SetStateAction, useMemo } from "react";
-import { Box, Typography, Card, CardContent, Tabs, Tab, TextField, useTheme, Button, Stack, Accordion, AccordionSummary, AccordionDetails } from "@mui/material";
+import { Avatar, Box, Chip, Typography, Card, CardContent, Tabs, Tab, TextField, useTheme, Button, Accordion, AccordionSummary, AccordionDetails, MenuItem, TablePagination } from "@mui/material";
 import axios from "../api/axiosInstance";
 import DashboardLayout from "./DashboardLayout";
 import { useAuth } from "../providers/AuthProvider";
 import {  type UserDTO, type UserDashboardAccessDataDTO } from "../types/dto";
 import { DataGrid, GridToolbar, type GridColDef, type GridPaginationModel  } from "@mui/x-data-grid";
 import { toast } from 'react-toastify';
+import { notifyAccessDataChanged } from '../utils/accessDataRefresh';
 import {
   Person as PersonIcon,
   Apartment as ApartmentIcon,
@@ -27,6 +28,11 @@ export default function UserDashboard() {
   const [filteredAccess, setFilteredAccess] = useState<UserDashboardAccessDataDTO[]>([])
   const [pendingFilteredAccess, setPendingFilteredAccess] = useState<UserDashboardAccessDataDTO[]>([])
   const [userData, setUserData] = useState<UserDTO>();
+  const [accessPaginationModel, setAccessPaginationModel] = useState<GridPaginationModel>({ pageSize: 5, page: 0 });
+  const [auditPage, setAuditPage] = useState(0);
+  const [auditPageSize, setAuditPageSize] = useState(5);
+  const [auditSearchText, setAuditSearchText] = useState('');
+  const [auditTypeFilter, setAuditTypeFilter] = useState('all');
 
   useEffect(() => {
     const pendingRequests = accesses.filter( x => !!x.pendingRequestDTO);
@@ -109,6 +115,7 @@ export default function UserDashboard() {
 
   const handleTabChange = (_event: any, newValue: SetStateAction<number>) => {
       setSelectedTab(newValue);
+      setAccessPaginationModel((current) => ({ ...current, page: 0 }));
   };
 
   const handleRequestAccess = async (access: UserDashboardAccessDataDTO, type: "REVOKE" | "GRANT", isCancel? : boolean) => {
@@ -124,7 +131,8 @@ export default function UserDashboard() {
       await axios.post("/v1/team-access-manager/user/access-request", 
         payload
       );
-      fetchDashboardData();
+      await Promise.all([fetchDashboardData(), fetchAuditData()]);
+      notifyAccessDataChanged();
       if(!isCancel){
         toast.success('Request submitted successfully',
           {
@@ -151,39 +159,6 @@ export default function UserDashboard() {
       }
   };
 
-  const auditColumns :GridColDef[] = [
-    {
-      field: 'auditDescription',
-      headerName: 'Action',
-      flex: 2,
-      minWidth: 150,
-      renderCell: (params) => (
-        <div
-          style={{
-            whiteSpace: 'normal',
-            wordBreak: 'break-word',
-            maxHeight: 100,
-            overflowY: 'auto',
-          }}
-        >
-          {params.value}
-        </div>
-      ),
-    },
-    {
-      field: 'actor',
-      headerName: 'Updated By',
-      flex: 1,
-      minWidth: 150,
-    },
-    {
-      field: 'date',
-      headerName: 'Updated Date',
-      flex: 1,
-      minWidth: 150,
-    },
-  ]
-
   const columns: GridColDef[] = [
   {
     field: 'featureName',
@@ -192,6 +167,7 @@ export default function UserDashboard() {
     filterable: true,
     flex: 1,
     minWidth: 150,
+    renderCell: (params) => <Typography fontWeight={700}>{params.value}</Typography>,
   },
   {
     field: 'hasAccess',
@@ -200,6 +176,7 @@ export default function UserDashboard() {
     filterable: true,
     flex: 1,
     minWidth: 150,
+    renderCell: (params) => <Chip className={params.value ? 'member-status-chip is-granted' : 'member-status-chip'} label={params.value ? 'Granted' : 'Not granted'} size="small" />,
   },
   {
     field: 'lastUpdatedDate',
@@ -208,6 +185,7 @@ export default function UserDashboard() {
     filterable: true,
     flex: 1,
     minWidth: 150,
+    renderCell: (params) => <Typography variant="body2" color="text.secondary">{formatDate(params.value)}</Typography>,
   },
   {
     field: 'requestStatus',
@@ -216,6 +194,7 @@ export default function UserDashboard() {
     minWidth: 150,
     valueGetter: (_value, row) =>
       row.pendingRequestDTO?.requestStatus ?? '—',
+    renderCell: (params) => <Chip className="member-status-chip is-pending" label={String(params.value).toLowerCase()} size="small" />,
   },
   {
     field: 'requestType',
@@ -247,28 +226,33 @@ export default function UserDashboard() {
     sortable: false,
     filterable: false,
     width: 150,
+    headerAlign: 'center',
+    align: 'center',
     renderCell: (params) => {
       const hasAccess = params.row.hasAccess;
         return (
-          <Button
-            variant="contained"
-            size="small"
-            color={selectedTab === 1 ? "primary" : hasAccess ? "error" : "primary"}
-            onClick={() => {
-              if(selectedTab === 1){
-                handleRequestAccess(params.row, params.row.pendingRequestDTO.requestType, true );
+          <Box className="grid-cell-content grid-cell-content-center">
+            <Button
+              className="member-access-action"
+              variant={selectedTab === 1 || hasAccess ? 'outlined' : 'contained'}
+              size="small"
+              color={selectedTab === 1 ? 'primary' : hasAccess ? 'error' : 'primary'}
+              onClick={() => {
+                if(selectedTab === 1){
+                  handleRequestAccess(params.row, params.row.pendingRequestDTO.requestType, true );
 
-              }
-              else if (hasAccess) {
-                handleRequestAccess(params.row,"REVOKE");
-              } else {
-                handleRequestAccess(params.row,"GRANT");
-              }
-            }}
-            disabled={selectedTab === 0 && !!params.row.pendingRequestDTO}
-          >
-            {selectedTab === 1 ? "Cancel Request" : hasAccess ? "Revoke Access" : "Request Access"}
-          </Button>
+                }
+                else if (hasAccess) {
+                  handleRequestAccess(params.row,"REVOKE");
+                } else {
+                  handleRequestAccess(params.row,"GRANT");
+                }
+              }}
+              disabled={selectedTab === 0 && !!params.row.pendingRequestDTO}
+            >
+              {selectedTab === 1 ? 'Cancel request' : hasAccess ? 'Request revoke' : 'Request access'}
+            </Button>
+          </Box>
         );
       }
   },
@@ -281,15 +265,40 @@ export default function UserDashboard() {
     return columns.filter(x => x.field !== 'hasAccess' && x.field !== 'lastUpdatedDate');
   },[selectedTab])
 
-  const rowsWithId = auditData.map((row, index) => ({
-    id: index + 1,
-    ...row
-  }));
+  const accessSummary = useMemo(() => ({
+    total: accesses.length,
+    granted: accesses.filter((access) => access.hasAccess).length,
+    pending: accesses.filter((access) => !!access.pendingRequestDTO).length,
+  }), [accesses]);
 
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
-    pageSize: 5,
-    page: 0,
-  });
+  const getAuditType = (description: string) => {
+    const value = description.toLowerCase();
+    if (/(access|permission|grant|revoke)/.test(value)) return 'access';
+    if (/(profile|user|team|role)/.test(value)) return 'profile';
+    return 'other';
+  };
+
+  const formatDate = (value?: string) => {
+    if (!value) return '—';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat(undefined, { dateStyle: 'medium', timeStyle: 'short' }).format(date);
+  };
+
+  const filteredAuditData = useMemo(() => {
+    const query = auditSearchText.trim().toLowerCase();
+    return auditData.filter((entry) => {
+      const description = String(entry.auditDescription || '');
+      const matchesQuery = !query || [description, entry.actor, entry.date].some((value) => String(value || '').toLowerCase().includes(query));
+      return matchesQuery && (auditTypeFilter === 'all' || getAuditType(description) === auditTypeFilter);
+    });
+  }, [auditData, auditSearchText, auditTypeFilter]);
+
+  const paginatedAuditData = filteredAuditData.slice(auditPage * auditPageSize, auditPage * auditPageSize + auditPageSize);
+
+  useEffect(() => {
+    const lastPage = Math.max(0, Math.ceil(filteredAuditData.length / auditPageSize) - 1);
+    if (auditPage > lastPage) setAuditPage(lastPage);
+  }, [auditPage, auditPageSize, filteredAuditData.length]);
     
     if (loading) return <DashboardLayout><Typography color="text.secondary">Loading your dashboard...</Typography></DashboardLayout>;
 
@@ -302,86 +311,99 @@ export default function UserDashboard() {
         <Typography variant="h4" sx={{ mt: .5 }}>Member Dashboard</Typography>
         <Typography color="text.secondary">Review your profile, access, and account activity.</Typography>
       </Box>
-      <Accordion className="member-dashboard-section">
+      <Accordion className="member-dashboard-section personal-info-section" defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" gutterBottom>
-            My Personal Info
-          </Typography>        </AccordionSummary>
+          <Typography variant="h6">My personal information</Typography>
+        </AccordionSummary>
         <AccordionDetails>
-        <Card>
-        <CardContent>
-          
-          <Stack spacing={1}>
-          <Box display="flex" alignItems="center">
-            <PersonIcon sx={{ mr: 1, color: "primary.main" }} />
-            Name : {userData?.name}
-          </Box>
-          <Box display="flex" alignItems="center">
-            <EmailIcon sx={{ mr: 1, color: "primary.main" }} />
-            Email : {userData?.email}
-          </Box>
-          <Box display="flex" alignItems="center">
-            <BadgeIcon sx={{ mr: 1, color: "primary.main" }} />
-            Employee ID : {userData?.empId}
-          </Box>
-          <Box display="flex" alignItems="center">
-            <ApartmentIcon sx={{ mr: 1, color: "primary.main" }} />
-            Team : {userData?.teamName}
-          </Box>
-          <Box display="flex" alignItems="center">
-            <WorkIcon sx={{ mr: 1, color: "primary.main" }} />
-            Position/Role : {userData?.role}
-          </Box>
-          <Box display="flex" alignItems="center">
-            <SecurityIcon sx={{ mr: 1, color: "primary.main" }} />
-            Access Mode : {userData?.accessMode === "OVERRIDE_TEAM_ACCESS" ? "Overriding Team Access" : "Inheriting Team Access"}
-          </Box>
+          <Card className="personal-info-card" elevation={0}>
+            <CardContent>
+              <Box className="personal-info-overview">
+                <Avatar className="personal-info-avatar">
+                  {(userData?.name || user?.username || 'M').charAt(0).toUpperCase()}
+                </Avatar>
+                <Box className="personal-info-identity">
+                  <Typography variant="h6">{userData?.name || user?.username || 'Member'}</Typography>
+                  <Typography variant="body2" color="text.secondary">{userData?.email || 'Email unavailable'}</Typography>
+                </Box>
+                <Chip
+                  className="personal-info-access-chip"
+                  label={userData?.accessMode === 'OVERRIDE_TEAM_ACCESS' ? 'Custom access' : 'Team access'}
+                  size="small"
+                />
+              </Box>
 
-          </Stack>
-        </CardContent>
-      </Card>
+              <Box className="personal-info-grid">
+                <Box className="personal-info-item">
+                  <Box className="personal-info-icon"><PersonIcon fontSize="small" /></Box>
+                  <Box><Typography variant="caption">Full name</Typography><Typography>{userData?.name || '—'}</Typography></Box>
+                </Box>
+                <Box className="personal-info-item">
+                  <Box className="personal-info-icon"><EmailIcon fontSize="small" /></Box>
+                  <Box><Typography variant="caption">Email address</Typography><Typography>{userData?.email || '—'}</Typography></Box>
+                </Box>
+                <Box className="personal-info-item">
+                  <Box className="personal-info-icon"><BadgeIcon fontSize="small" /></Box>
+                  <Box><Typography variant="caption">Employee ID</Typography><Typography>{userData?.empId || '—'}</Typography></Box>
+                </Box>
+                <Box className="personal-info-item">
+                  <Box className="personal-info-icon"><ApartmentIcon fontSize="small" /></Box>
+                  <Box><Typography variant="caption">Team</Typography><Typography>{userData?.teamName || '—'}</Typography></Box>
+                </Box>
+                <Box className="personal-info-item">
+                  <Box className="personal-info-icon"><WorkIcon fontSize="small" /></Box>
+                  <Box><Typography variant="caption">Position / role</Typography><Typography>{userData?.role || '—'}</Typography></Box>
+                </Box>
+                <Box className="personal-info-item">
+                  <Box className="personal-info-icon"><SecurityIcon fontSize="small" /></Box>
+                  <Box><Typography variant="caption">Access mode</Typography><Typography>{userData?.accessMode === 'OVERRIDE_TEAM_ACCESS' ? 'Custom override' : 'Inherited from team'}</Typography></Box>
+                </Box>
+              </Box>
+            </CardContent>
+          </Card>
         </AccordionDetails>
       </Accordion>
 
       <Accordion className="member-dashboard-section" defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" gutterBottom>
-            My Accesses
-          </Typography>        </AccordionSummary>
+          <Typography variant="h6">My access</Typography>
+        </AccordionSummary>
         <AccordionDetails>
-          <Card>
-        <CardContent>
-          <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2 }}>
-            <Tab label="Current Access" />
-            <Tab label="Pending Requests" />
-          </Tabs>
-          <div className="responsive-grid-wrap">
-            <TextField
-                  label="Search users"
-                  variant="outlined"
-                  size="small"
-                  fullWidth
-                  sx={{ mb: 2 }}
-                  value={searchText}
-                  onChange={(e) => setSearchText(e.target.value)}
-                />
-            
-                 <DataGrid
-                  rows={selectedTab === 0? filteredAccess : pendingFilteredAccess}
+          <Card className="member-access-card" elevation={0}>
+            <CardContent>
+              <Box className="member-access-summary">
+                <Box><Typography variant="caption">Features</Typography><Typography variant="h6">{accessSummary.total}</Typography></Box>
+                <Box><Typography variant="caption">Granted</Typography><Typography variant="h6">{accessSummary.granted}</Typography></Box>
+                <Box><Typography variant="caption">Pending</Typography><Typography variant="h6">{accessSummary.pending}</Typography></Box>
+              </Box>
+              <Tabs value={selectedTab} onChange={handleTabChange} sx={{ mb: 2 }}>
+                <Tab label={`Current access (${accessSummary.total})`} />
+                <Tab label={`Pending requests (${accessSummary.pending})`} />
+              </Tabs>
+              <div className="responsive-grid-wrap">
+                <Box className="member-access-toolbar">
+                  <TextField
+                    label="Search features"
+                    size="small"
+                    value={searchText}
+                    onChange={(e) => setSearchText(e.target.value)}
+                    sx={{ flex: 1, minWidth: 220 }}
+                  />
+                  <Typography variant="body2" color="text.secondary" sx={{ whiteSpace: 'nowrap' }}>
+                    {(selectedTab === 0 ? filteredAccess : pendingFilteredAccess).length} shown
+                  </Typography>
+                </Box>
+                <DataGrid
+                  rows={selectedTab === 0 ? filteredAccess : pendingFilteredAccess}
                   columns={baseColumns}
-                  getRowId={(row) => row.id}
-                  paginationModel={paginationModel}
-                  onPaginationModelChange={setPaginationModel}
-                  pageSizeOptions={[5,10, 20, 50]}
+                  getRowId={(row) => row.featureId}
+                  paginationModel={accessPaginationModel}
+                  onPaginationModelChange={setAccessPaginationModel}
+                  pageSizeOptions={[5, 10, 20, 50]}
                   disableRowSelectionOnClick
                   autoHeight
                   slots={{ toolbar: GridToolbar }}
                   sx={{
-                    '& .MuiDataGrid-columnHeader': {
-                      backgroundColor:'#f5f7fb !important',
-                      fontWeight: 'bold',
-                      fontSize: '1rem',
-                    },
                     '& .MuiDataGrid-cell': {
                       fontSize: '0.95rem',
                       padding: '8px',
@@ -389,59 +411,84 @@ export default function UserDashboard() {
                     '& .MuiDataGrid-row': {
                       borderBottom: `1px solid ${theme.palette.divider}`,
                     },
-                    '& .MuiDataGrid-footerContainer': {
-                      mt: 2,
-                    },
                   }}
                 />
-
-          </div>
-        </CardContent>
-      </Card>
+              </div>
+            </CardContent>
+          </Card>
         </AccordionDetails>
       </Accordion>
       
       <Accordion className="member-dashboard-section" defaultExpanded>
         <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-          <Typography variant="h6" gutterBottom>
-            Actions Taken on My Profile
-          </Typography>        
+          <Typography variant="h6">Actions taken on my profile</Typography>
         </AccordionSummary>
         <AccordionDetails>
-          <Card>
-          <CardContent>
-            <div className="responsive-grid-wrap">
-              <DataGrid
-                    rows={rowsWithId}
-                    columns={auditColumns}
-                    getRowId={(row) => row.id}
-                    getRowHeight={() => 'auto'} // or function returning 'auto'
-                    paginationModel={paginationModel}
-                    onPaginationModelChange={setPaginationModel}
-                    pageSizeOptions={[5,10, 20, 50]}
-                    disableRowSelectionOnClick
-                    autoHeight
-                    slots={{ toolbar: GridToolbar }}
-                    sx={{
-                      '& .MuiDataGrid-columnHeader': {
-                        backgroundColor:'#f5f7fb !important',
-                        fontWeight: 'bold',
-                        fontSize: '1rem',
-                      },
-                      '& .MuiDataGrid-cell': {
-                        fontSize: '0.95rem',
-                        padding: '8px',
-                      },
-                      '& .MuiDataGrid-row': {
-                        borderBottom: `1px solid ${theme.palette.divider}`,
-                      },
-                      '& .MuiDataGrid-footerContainer': {
-                        mt: 2,
-                      },
-                    }}
-                  />
-            </div>
-
+          <Card className="member-activity-card" elevation={0}>
+            <CardContent>
+              <Box className="member-activity-toolbar">
+                <TextField
+                  label="Search activity"
+                  size="small"
+                  value={auditSearchText}
+                  onChange={(event) => {
+                    setAuditSearchText(event.target.value);
+                    setAuditPage(0);
+                  }}
+                  sx={{ flex: 1, minWidth: 220 }}
+                />
+                <TextField
+                  select
+                  label="Activity type"
+                  size="small"
+                  value={auditTypeFilter}
+                  onChange={(event) => {
+                    setAuditTypeFilter(event.target.value);
+                    setAuditPage(0);
+                  }}
+                  sx={{ minWidth: 160 }}
+                >
+                  <MenuItem value="all">All activity</MenuItem>
+                  <MenuItem value="access">Access changes</MenuItem>
+                  <MenuItem value="profile">Profile changes</MenuItem>
+                  <MenuItem value="other">Other activity</MenuItem>
+                </TextField>
+              </Box>
+              {paginatedAuditData.length > 0 ? (
+                <Box className="member-activity-timeline">
+                  {paginatedAuditData.map((entry, index) => {
+                    const type = getAuditType(String(entry.auditDescription || ''));
+                    return (
+                      <Box className="member-activity-item" key={`${entry.id || entry.date || index}-${index}`}>
+                        <Box className="member-activity-marker" />
+                        <Box className="member-activity-content">
+                          <Box className="member-activity-heading">
+                            <Typography fontWeight={700}>{entry.auditDescription || 'Profile activity updated'}</Typography>
+                            <Chip className={`member-activity-type is-${type}`} label={type} size="small" />
+                          </Box>
+                          <Typography variant="body2" color="text.secondary">
+                            {entry.actor || 'System'} · {formatDate(entry.date)}
+                          </Typography>
+                        </Box>
+                      </Box>
+                    );
+                  })}
+                </Box>
+              ) : (
+                <Box className="member-activity-empty"><Typography color="text.secondary">No matching profile activity yet.</Typography></Box>
+              )}
+              <TablePagination
+                component="div"
+                count={filteredAuditData.length}
+                page={auditPage}
+                onPageChange={(_event, page) => setAuditPage(page)}
+                rowsPerPage={auditPageSize}
+                onRowsPerPageChange={(event) => {
+                  setAuditPageSize(Number(event.target.value));
+                  setAuditPage(0);
+                }}
+                rowsPerPageOptions={[5, 10, 20, 50]}
+              />
             </CardContent>
           </Card>
         </AccordionDetails>

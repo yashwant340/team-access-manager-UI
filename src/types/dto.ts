@@ -54,6 +54,7 @@ export interface PendingRequestDTO{
   userId : number;
   featureId: number;
   featureName: string;
+  currentFeatureHasAccess: boolean | null;
   name: string;
   otherFeatures: AccessControlDTO;
 }

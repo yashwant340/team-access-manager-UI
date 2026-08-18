@@ -1,4 +1,4 @@
-import  { useEffect, useMemo, useState, type SetStateAction } from 'react';
+import  { useCallback, useEffect, useMemo, useState, type SetStateAction } from 'react';
 import {  Button, Modal, Typography } from 'antd';
 import axios from '../api/axiosInstance';
 import type {   TeamDTO, UserDTO } from '../types/dto';
@@ -12,6 +12,7 @@ import {History as HistoryIcon} from '@mui/icons-material';
 import {  Avatar, Box, Chip, IconButton, Tab, Tabs, TextField, Tooltip, Typography as MuiTypography } from '@mui/material';
 import { useAuth } from '../providers/AuthProvider';
 import { toast } from 'react-toastify';
+import { notifyAccessDataChanged, subscribeToAccessDataChanges } from '../utils/accessDataRefresh';
 
 const { Title } = Typography;
 
@@ -83,7 +84,7 @@ export default function TeamAccessManager() {
         }
     },[addModalOpen]);
 
-    const fetchTeams = async () => {
+    const fetchTeams = useCallback(async () => {
       try{
         if (user?.platformRole === "PLATFORM_ADMIN") {
           const response = await axios.get<TeamDTO[]>('/v1/team-access-manager/team/getAll');
@@ -107,11 +108,12 @@ export default function TeamAccessManager() {
                 }
         );
       }
-    }
+    }, [user?.platformRole, user?.teamId]);
     
     useEffect(() => {
-      fetchTeams();
-    }, []);
+      void fetchTeams();
+      return subscribeToAccessDataChanges(fetchTeams);
+    }, [fetchTeams]);
 
     const confirmDeleteTeam = (team: TeamDTO) => {
         Modal.confirm({
@@ -158,6 +160,7 @@ export default function TeamAccessManager() {
         accessList : accessList
     }).then((res) => {
         setTeams((prev) => [...prev, res.data]);
+        notifyAccessDataChanged();
         setAddModalOpen(false);
         setNewTeamName('');
         setSelectedFeatures([]);
@@ -193,7 +196,8 @@ export default function TeamAccessManager() {
                 hideProgressBar: false
               }
             );
-            fetchTeams();
+            void fetchTeams();
+            notifyAccessDataChanged();
         })
     }
     

@@ -6,6 +6,7 @@ import type { PendingRequestDTO } from "../types/dto";
 import axios from '../api/axiosInstance';
 import AdminApprovalDialog from "./AdminApprovalDialog";
 import { toast } from 'react-toastify';
+import { notifyAccessDataChanged, subscribeToAccessDataChanges } from '../utils/accessDataRefresh';
 
 const { Title } = Typography;
 
@@ -29,7 +30,11 @@ export default function PendingRequest(){
     }, [searchText, pendingRequest]);
     
     useEffect(() => {
-        fetchPendingRequest();
+        const refreshRequests = () => {
+          void fetchPendingRequest();
+        };
+        refreshRequests();
+        return subscribeToAccessDataChanges(refreshRequests);
     },[]);
 
     const fetchPendingRequest = async () => {
@@ -54,7 +59,7 @@ export default function PendingRequest(){
         if (!currRequesData) return;
         try {
             const requestBody = {
-                ...currRequesData,
+                id: currRequesData.id,
                 requestDecision: decision
             };
             await axios.post('/v1/team-access-manager/team/request-decision', requestBody);
@@ -65,7 +70,8 @@ export default function PendingRequest(){
                     hideProgressBar: false
                 }
             )
-            fetchPendingRequest(); 
+            void fetchPendingRequest();
+            notifyAccessDataChanged();
             setDialogOpen(false);
         } catch {
             toast.error(`Failed to ${decision.toLowerCase()} request`,
@@ -194,13 +200,11 @@ export default function PendingRequest(){
             <AdminApprovalDialog
                 open={isDialogOpen}
                 onClose={() => setDialogOpen(false)}
-                onApprove={(notes) => {
-                    void notes;
+                onApprove={() => {
                     handleDecision("APPROVED")
                     setDialogOpen(false);
                 }}
-                onReject={(notes) => {
-                    void notes;
+                onReject={() => {
                     handleDecision("REJECTED")
                     setDialogOpen(false);
                 }}

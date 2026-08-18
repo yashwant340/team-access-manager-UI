@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, type SetStateAction } from 'react';
+import { useCallback, useEffect, useMemo, useState, type SetStateAction } from 'react';
 import { Button, Typography, Modal } from 'antd';
 import axios from '../api/axiosInstance';
 import UserFeatureAccess from './UserFeatureAccess';
@@ -14,6 +14,7 @@ import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import HistoryIcon from '@mui/icons-material/History';
 import { useAuth } from '../providers/AuthProvider';
 import { toast } from 'react-toastify';
+import { notifyAccessDataChanged, subscribeToAccessDataChanges } from '../utils/accessDataRefresh';
 
 
 const { Title } = Typography;
@@ -46,6 +47,19 @@ export default function UserAccessManager() {
   const [filteredUsers, setFilteredUsers] = useState<UserDTO[]>(users);
   const [selectedTab, setSelectedTab] = useState(0);
 
+  const fetchTeams = useCallback(async () => {
+    try {
+      const response = await axios.get<TeamDTO[]>('/v1/team-access-manager/team/getAll');
+      setTeams(response.data || []);
+    } catch {
+      toast.error('Failed to load teams. Please try again after sometime', {
+        position: 'top-right',
+        autoClose: 5000,
+        hideProgressBar: false,
+      });
+    }
+  }, []);
+
   useEffect(() => {
     const lowerSearch = searchText.toLowerCase();
     const userList = selectedTab === 0 ? activeUsers : inActiveUsers;
@@ -57,37 +71,51 @@ export default function UserAccessManager() {
     setFilteredUsers(filtered);
   }, [searchText, users,selectedTab]);
 
-  useEffect(() => {
+  const fetchUsers = useCallback(async () => {
     if(user?.platformRole === 'PLATFORM_ADMIN'){
-      axios
-      .get<UserDTO[]>('/v1/team-access-manager/user/getAll')
-      .then((res) => setUsers(res.data || []))
-      .catch(() => toast.error('Failed to load users. Please try again after sometime',
+      try {
+        const response = await axios.get<UserDTO[]>('/v1/team-access-manager/user/getAll');
+        setUsers(response.data || []);
+      } catch {
+        toast.error('Failed to load users. Please try again after sometime',
           {
             position: "top-right",
             autoClose: 5000,
             hideProgressBar: false
           }
-        ));
-      
+        );
+      }
     }else if(user?.platformRole === 'TEAM_ADMIN'){
-      axios
-      .get<UserDTO[]>('/v1/team-access-manager/user/teamId/', {
-        params : {
-          teamId : user.teamId
-        }
-      })
-      .then((res) => setUsers(res.data || []))
-      .catch(() => toast.error('Failed to load users. Please try again after sometime',
+      try {
+        const response = await axios.get<UserDTO[]>('/v1/team-access-manager/user/teamId/', {
+          params: { teamId: user.teamId },
+        });
+        setUsers(response.data || []);
+      } catch {
+        toast.error('Failed to load users. Please try again after sometime',
           {
             position: "top-right",
             autoClose: 5000,
             hideProgressBar: false
-          }));
+          });
+      }
     }
+  }, [user?.platformRole, user?.teamId]);
 
-    axios.get<TeamDTO[]>('v1/team-access-manager/team/getAll').then((res) => setTeams(res.data || []));
-  }, []);
+  useEffect(() => {
+    const refreshLists = () => {
+      void fetchUsers();
+      void fetchTeams();
+    };
+    refreshLists();
+    return subscribeToAccessDataChanges(refreshLists);
+  }, [fetchTeams, fetchUsers]);
+
+  useEffect(() => {
+    if (addModalOpen) {
+      void fetchTeams();
+    }
+  }, [addModalOpen, fetchTeams]);
 
   const activeUsers = users.filter(user => user.active);
   const inActiveUsers = users.filter(user => !user.active);
@@ -128,6 +156,7 @@ export default function UserAccessManager() {
         );
       setEditModalOpen(false);
       setEditUser(null);
+      notifyAccessDataChanged();
     });
   };
 
@@ -181,6 +210,7 @@ export default function UserAccessManager() {
       };
       setUsers((prev) => [...prev, result]);
       setAddModalOpen(false);
+      notifyAccessDataChanged();
     });
   };
 
@@ -199,6 +229,7 @@ export default function UserAccessManager() {
           })
           .then(() => {
             setUsers((prev) => prev.filter((u) => u.id !== user.id));
+            notifyAccessDataChanged();
             toast.success('User has been deleted successfully',
             {
               position: "top-right",
