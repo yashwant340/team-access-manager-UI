@@ -208,22 +208,3 @@ team-access-manager-service/
     ├── utils/           JWT and current-user helpers
     └── wrapper/         Command/request payload models
 ```
-
-## Current limitations and production hardening
-
-These are useful next steps rather than claims that the current implementation already provides them:
-
-- Add backend method-level authorization (`@PreAuthorize` or equivalent) to every administrative operation; frontend route checks are not a security boundary.
-- Load the JWT signing key from stable secret storage. The current key is generated on process startup, so tokens do not survive a restart.
-- Move database and mail credentials out of source control and rotate exposed credentials.
-- Store OTP/reset state in Redis or a database for multi-instance deployment and restart resilience.
-- Add centralized exception handling, request validation, consistent error DTOs, pagination, and API documentation.
-- Add database migrations (Flyway/Liquibase) instead of relying on `ddl-auto=update`.
-- Increase unit, integration, repository, security, and frontend test coverage.
-- Consider HttpOnly, Secure cookies or an equivalent hardened token strategy to reduce token theft through XSS.
-- Add explicit rejection for login requests, uniqueness checks, first-login password change enforcement, refresh-token/logout revocation, and feature deactivation management.
-- Standardize on one component library and one date/time representation to reduce bundle size and formatting ambiguity.
-
-## Related documentation
-
-See [interview question.md](./interview%20question.md) for architecture, feature, security, database, frontend, backend, testing, and follow-up interview questions with answers.
